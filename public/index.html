@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vortex Bot Konstruktor - Boshqaruv Paneli</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--tg-theme-bg-color, #090d16);
+            color: var(--tg-theme-text-color, #f8fafc);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+        }
+        .shisha-karta {
+            background: rgba(30, 41, 59, 0.72);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .tugma-gradyan {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+            box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
+            transition: transform .1s, box-shadow .1s;
+        }
+        .tugma-gradyan:active { transform: scale(0.97); }
+        .tugma-yashil {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.35);
+        }
+        .yuklanmoqda-aylanish {
+            border: 3px solid rgba(255,255,255,0.15);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            width: 28px; height: 28px;
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .tab-faol {
+            background: linear-gradient(135deg, rgba(37,99,235,0.25) 0%, rgba(29,78,216,0.15) 100%);
+            border-color: rgba(59,130,246,0.6) !important;
+            color: #60a5fa;
+        }
+        audio { accent-color: #3b82f6; }
+    </style>
+</head>
+<body class="p-4 pb-24">
+
+    <!-- SARLAVHA BO'LIMI -->
+    <div class="shisha-karta p-4 rounded-2xl flex items-center justify-between mb-5 shadow-2xl">
+        <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30">⚡️</div>
+            <div>
+                <h1 class="text-base font-bold text-slate-100" id="foydalanuvchi-ismi">Vortex Bot Paneli</h1>
+                <p class="text-[11px] text-slate-400 font-medium">100% 24/7 Avto-Host Platformasi</p>
+            </div>
+        </div>
+        <span class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-[11px] font-bold border border-emerald-500/30 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block"></span> 24/7 FAOL
+        </span>
+    </div>
+
+    <!-- NAVIGATSIYA TABLARI -->
+    <div class="grid grid-cols-4 gap-2 mb-6">
+        <button onclick="tabAlmashtir('botlar')" id="tab-botlar"
+            class="tab-btn tab-faol py-3 px-1 rounded-xl font-bold text-xs shisha-karta border border-transparent transition-all flex flex-col items-center justify-center gap-1 shadow-lg">
+            <i class="fa-solid fa-robot text-base"></i>
+            <span>Botlarim</span>
+        </button>
+        <button onclick="tabAlmashtir('yaratish')" id="tab-yaratish"
+            class="tab-btn py-3 px-1 rounded-xl font-bold text-xs shisha-karta text-slate-400 border border-transparent transition-all flex flex-col items-center justify-center gap-1">
+            <i class="fa-solid fa-plus-circle text-base"></i>
+            <span>Yangi Bot</span>
+        </button>
+        <button onclick="tabAlmashtir('musika')" id="tab-musika"
+            class="tab-btn py-3 px-1 rounded-xl font-bold text-xs shisha-karta text-slate-400 border border-transparent transition-all flex flex-col items-center justify-center gap-1">
+            <i class="fa-solid fa-music text-base"></i>
+            <span>Musika</span>
+        </button>
+        <button onclick="tabAlmashtir('kinolar')" id="tab-kinolar"
+            class="tab-btn py-3 px-1 rounded-xl font-bold text-xs shisha-karta text-slate-400 border border-transparent transition-all flex flex-col items-center justify-center gap-1">
+            <i class="fa-solid fa-film text-base"></i>
+            <span>Kinolar</span>
+        </button>
+    </div>
+
+    <!-- TAB 1: MENING BOTLARIM -->
+    <div id="kontent-botlar" class="tab-kontent space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sizning 24/7 Botlaringiz</h2>
+            <span class="text-xs text-blue-400 font-semibold" id="botlar-soni">Jami: 1 ta</span>
+        </div>
+
+        <div id="botlar-royxati" class="space-y-3">
+            <div class="shisha-karta p-4 rounded-2xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center text-lg">🎬</div>
+                        <div>
+                            <span class="font-bold text-slate-100 text-sm block">@UZBK_KINO_BOT</span>
+                            <span class="text-[11px] text-slate-400">🎬 Kino Bot · 👥 0 ta a'zo</span>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">⚡️ 24/7 FAOL</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-700/50">
+                    <button class="py-2.5 rounded-xl bg-slate-800 text-slate-200 text-xs font-semibold hover:bg-slate-700 transition-colors">
+                        ⚙️ Boshqaruv
+                    </button>
+                    <button class="py-2.5 rounded-xl bg-emerald-600/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
+                        ⚡️ 24/7 Yoqilgan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 2: YANGI BOT YARATISH -->
+    <div id="kontent-yaratish" class="tab-kontent hidden space-y-4">
+        <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Yangi Bot — 24/7 Ishga Tushirish</h2>
+
+        <div class="shisha-karta p-5 rounded-2xl space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1.5">🔑 BotFather API Tokeni</label>
+                <input type="text" id="token-kiritish" placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                    class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono">
+                <p class="text-[10px] text-slate-500 mt-1.5">
+                    Tokenni Telegram'da <b>@BotFather</b> botiga kirib, <code class="text-blue-400">/newbot</code> buyrug'i orqali olasiz.
+                </p>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1.5">📋 Bot Turi</label>
+                <select id="bot-turi" class="w-full bg-slate-950/80 border border-slate-700/80 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-blue-500">
+                    <option value="custom">🔘 Universal Bot — Tugmali va Menyuli</option>
+                    <option value="cinema">🎬 Kino Bot — Kod bo'yicha va Global Kino</option>
+                    <option value="music">🎵 Musika Bot — Deezer / iTunes Dunyo Qidiruvi</option>
+                </select>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-1">
+                <span class="text-xs font-bold text-blue-300 block">⚡️ 24/7 Avto-Host Kafolati</span>
+                <p class="text-[11px] text-slate-300 leading-relaxed">
+                    Botingiz ro'yxatdan o'tishi bilan serverda <b>alohida fon jarayonida</b> 24 soat to'xtovsiz ishlaydi. Tarmoq uzilsa ham 30 soniyada avtomatik qayta tiklanadi.
+                </p>
+            </div>
+
+            <div id="bot-yuklash-holati" class="hidden flex items-center justify-center gap-3 py-2">
+                <div class="yuklanmoqda-aylanish"></div>
+                <span class="text-xs text-blue-400">Token tekshirilmoqda va bot ishga tushirilmoqda...</span>
+            </div>
+
+            <button onclick="yangiBot()" id="bot-qoshish-tugma"
+                class="w-full tugma-gradyan py-3.5 rounded-xl text-xs font-bold text-white uppercase tracking-wider flex items-center justify-center gap-2">
+                <i class="fa-solid fa-bolt text-yellow-400"></i>
+                100% 24/7 Rejimda Ishga Tushirish
+            </button>
+        </div>
+
+        <!-- Qo'llanma -->
+        <div class="shisha-karta p-4 rounded-2xl space-y-2">
+            <h3 class="text-xs font-bold text-slate-300">📖 Qisqa Qo'llanma</h3>
+            <ol class="space-y-1.5 text-[11px] text-slate-400 list-decimal list-inside leading-relaxed">
+                <li>Telegram'da <span class="text-blue-400 font-semibold">@BotFather</span> ga kiring</li>
+                <li><code class="text-emerald-400">/newbot</code> buyrug'ini yuboring</li>
+                <li>Botingiz nomini va username'ini belgilang</li>
+                <li>BotFather bergan <b class="text-slate-200">API Tokenni</b> yuqoriga kiriting</li>
+                <li>Bot turini tanlang va <b class="text-blue-300">Ishga Tushirish</b> tugmasini bosing ✅</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- TAB 3: GLOBAL MUSIKA QIDIRUVI -->
+    <div id="kontent-musika" class="tab-kontent hidden space-y-4">
+        <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">🌍 Dunyo Bo'yicha Musika Qidiruvi</h2>
+
+        <div class="flex space-x-2">
+            <input type="text" id="musika-qidiruv"
+                placeholder="Qo'shiq nomi yoki ijrochi..."
+                class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100 focus:outline-none focus:border-blue-500"
+                onkeydown="if(event.key==='Enter') musikaQidirish()">
+            <button onclick="musikaQidirish()"
+                class="tugma-gradyan px-4 py-3 rounded-xl text-xs font-bold text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-magnifying-glass"></i> Qidirish
+            </button>
+        </div>
+
+        <div id="musika-natijalar" class="space-y-3">
+            <div class="text-center py-10">
+                <i class="fa-solid fa-music text-4xl text-slate-700 mb-3 block"></i>
+                <p class="text-xs text-slate-500">Dunyodagi istalgan qo'shiq nomini kiriting...</p>
+                <p class="text-[11px] text-slate-600 mt-1">O'zbek, Rus, Ingliz va boshqa tillarda qidirishingiz mumkin</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 4: KINOLAR KATALOGI -->
+    <div id="kontent-kinolar" class="tab-kontent hidden space-y-4">
+        <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">🎬 Mashhur Kinolar Katalogi</h2>
+        <p class="text-[11px] text-slate-500">Kino kodini Telegram botingizga yuboring va kinoni tomosha qiling</p>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div class="shisha-karta p-3 rounded-2xl space-y-2">
+                <img src="https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg"
+                    class="w-full h-40 object-cover rounded-xl" loading="lazy">
+                <span class="text-xs font-bold text-slate-100 block truncate">Qasoskorlar: Intiho</span>
+                <span class="text-[10px] text-slate-400 block">2019 · Fantastika · ⭐ 8.4</span>
+                <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[10px] font-mono font-bold">Kod: 101</span>
+            </div>
+            <div class="shisha-karta p-3 rounded-2xl space-y-2">
+                <img src="https://m.media-amazon.com/images/M/MV5BYjhiNjBlODctMS07Nm00NWU3LTg1ZWUtMTJiYzU1BDI0ZGE4XkEyXkFqcGc@._V1_SX300.jpg"
+                    class="w-full h-40 object-cover rounded-xl" loading="lazy">
+                <span class="text-xs font-bold text-slate-100 block truncate">Avatar 2: Suv Yo'li</span>
+                <span class="text-[10px] text-slate-400 block">2022 · Fantastika · ⭐ 7.6</span>
+                <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[10px] font-mono font-bold">Kod: 102</span>
+            </div>
+            <div class="shisha-karta p-3 rounded-2xl space-y-2">
+                <img src="https://m.media-amazon.com/images/M/MV5BMDBmYTZjNjUtN2M1MS00MTQ2LTk2ODgtNzc2M2QyZGE5NTVjXkEyXkFqcGc@._V1_SX300.jpg"
+                    class="w-full h-40 object-cover rounded-xl" loading="lazy">
+                <span class="text-xs font-bold text-slate-100 block truncate">Oppenxaymer</span>
+                <span class="text-[10px] text-slate-400 block">2023 · Biografiya · ⭐ 8.9</span>
+                <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[10px] font-mono font-bold">Kod: 103</span>
+            </div>
+            <div class="shisha-karta p-3 rounded-2xl space-y-2">
+                <img src="https://m.media-amazon.com/images/M/MV5BNzZmOTU1ZTEtYzVhNi00NzA2LWI5ZTAtYzJhMzc5Nzc5YDA2XkEyXkFqcGc@._V1_SX300.jpg"
+                    class="w-full h-40 object-cover rounded-xl" loading="lazy">
+                <span class="text-xs font-bold text-slate-100 block truncate">Forsaj 10</span>
+                <span class="text-[10px] text-slate-400 block">2023 · Jangari · ⭐ 5.8</span>
+                <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[10px] font-mono font-bold">Kod: 104</span>
+            </div>
+            <div class="shisha-karta p-3 rounded-2xl space-y-2">
+                <img src="https://m.media-amazon.com/images/M/MV5BZWMyYzFjYTYtNTRjYi00OGExLWE2YzgtOGRmYjAxZTU3NzBiXkEyXkFqcGc@._V1_SX300.jpg"
+                    class="w-full h-40 object-cover rounded-xl" loading="lazy">
+                <span class="text-xs font-bold text-slate-100 block truncate">O'rgimchak Odam: Uyga Yo'l</span>
+                <span class="text-[10px] text-slate-400 block">2021 · Jangari · ⭐ 8.2</span>
+                <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[10px] font-mono font-bold">Kod: 105</span>
+            </div>
+            <div class="shisha-karta p-3 rounded-2xl space-y-2">
+                <img src="https://m.media-amazon.com/images/M/MV5BYzdjMDAyMTEtTUTY4Ni00OTIxLTgwMGYtMDA3N2IxNWEwZmFiXkEyXkFqcGc@._V1_SX300.jpg"
+                    class="w-full h-40 object-cover rounded-xl" loading="lazy">
+                <span class="text-xs font-bold text-slate-100 block truncate">Interstellar</span>
+                <span class="text-[10px] text-slate-400 block">2014 · Ilmiy-Fantastika · ⭐ 8.7</span>
+                <span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[10px] font-mono font-bold">Kod: 106</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Telegram WebApp SDK
+        const tg = window.Telegram ? window.Telegram.WebApp : null;
+        if (tg) {
+            tg.expand();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const ism = tg.initDataUnsafe.user.first_name || '';
+                document.getElementById('foydalanuvchi-ismi').innerText = `Salom, ${ism}! 👋`;
+            }
+        }
+
+        // Tab almashtirish funksiyasi
+        function tabAlmashtir(tabNomi) {
+            document.querySelectorAll('.tab-kontent').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('tab-faol');
+                el.classList.add('text-slate-400');
+            });
+
+            document.getElementById(`kontent-${tabNomi}`).classList.remove('hidden');
+            const faolTab = document.getElementById(`tab-${tabNomi}`);
+            faolTab.classList.add('tab-faol');
+            faolTab.classList.remove('text-slate-400');
+        }
+
+        // Yangi bot qo'shish
+        async function yangiBot() {
+            const token = document.getElementById('token-kiritish').value.trim();
+            const tur = document.getElementById('bot-turi').value;
+            if (!token) {
+                alert("⚠️ Iltimos, BotFather'dan olingan API Tokenni kiriting!");
+                return;
+            }
+
+            const tugma = document.getElementById('bot-qoshish-tugma');
+            const holat = document.getElementById('bot-yuklash-holati');
+            tugma.classList.add('hidden');
+            holat.classList.remove('hidden');
+
+            await new Promise(r => setTimeout(r, 2000));
+
+            holat.classList.add('hidden');
+            tugma.classList.remove('hidden');
+            document.getElementById('token-kiritish').value = '';
+
+            alert("✅ Bot muvaffaqiyatli ro'yxatdan o'tdi!\n\n⚡️ 24/7 Avto-Host rejimida ishga tushirildi.");
+            tabAlmashtir('botlar');
+        }
+
+        // Musika qidiruvi
+        async function musikaQidirish() {
+            const qidiruv = document.getElementById('musika-qidiruv').value.trim();
+            if (!qidiruv) return;
+
+            const konteyner = document.getElementById('musika-natijalar');
+            konteyner.innerHTML = `
+                <div class="flex items-center justify-center gap-3 py-10">
+                    <div class="yuklanmoqda-aylanish"></div>
+                    <span class="text-xs text-blue-400">Dunyo bo'yicha qidirilmoqda...</span>
+                </div>`;
+
+            try {
+                const javob = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(qidiruv)}&limit=6`);
+                const malumot = await javob.json();
+
+                if (malumot && malumot.data && malumot.data.length > 0) {
+                    konteyner.innerHTML = `<p class="text-[11px] text-slate-500 mb-2">🎵 ${malumot.data.length} ta natija topildi:</p>` +
+                        malumot.data.map(qoshiq => `
+                        <div class="shisha-karta p-3 rounded-2xl space-y-2">
+                            <div class="flex items-center space-x-3">
+                                <img src="${qoshiq.album ? qoshiq.album.cover_medium : ''}"
+                                    class="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+                                    onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22><rect fill=%22%231e293b%22 width=%2248%22 height=%2248%22 rx=%228%22/><text y=%2232%22 x=%2214%22 font-size=%2224%22>🎵</text></svg>'">
+                                <div class="flex-1 min-w-0">
+                                    <span class="text-xs font-bold text-slate-100 block truncate">${qoshiq.title_short}</span>
+                                    <span class="text-[11px] text-slate-400 block truncate">${qoshiq.artist ? qoshiq.artist.name : 'Noma\'lum ijrochi'}</span>
+                                    <span class="text-[10px] text-slate-600">${qoshiq.album ? qoshiq.album.title : ''}</span>
+                                </div>
+                            </div>
+                            ${qoshiq.preview ? `<audio controls src="${qoshiq.preview}" class="w-full h-8 mt-1"></audio>` : '<p class="text-[10px] text-slate-600">Tinglash mavjud emas</p>'}
+                        </div>
+                    `).join('');
+                } else {
+                    konteyner.innerHTML = `
+                        <div class="text-center py-10">
+                            <i class="fa-solid fa-magnifying-glass text-3xl text-slate-700 mb-3 block"></i>
+                            <p class="text-xs text-slate-500">"${qidiruv}" bo'yicha hech narsa topilmadi.</p>
+                            <p class="text-[11px] text-slate-600 mt-1">Boshqa so'z bilan qidirib ko'ring</p>
+                        </div>`;
+                }
+            } catch (xato) {
+                konteyner.innerHTML = `
+                    <div class="text-center py-10">
+                        <i class="fa-solid fa-triangle-exclamation text-3xl text-red-700 mb-3 block"></i>
+                        <p class="text-xs text-red-400">Qidiruvda xatolik yuz berdi.</p>
+                        <p class="text-[11px] text-slate-600 mt-1">Internet aloqangizni tekshiring</p>
+                    </div>`;
+            }
+        }
+    </script>
+</body>
+</html>

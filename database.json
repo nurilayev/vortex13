@@ -1,0 +1,30 @@
+{
+  "users": [
+    {
+      "user_id": 5882864189,
+      "username": "HASAN_712",
+      "first_name": "HA$AN",
+      "registered_at": "2026-09-07T10:17:16.013Z"
+    }
+  ],
+  "bots": [],
+  "buttons": [],
+  "movies": [],
+  "music": [],
+  "subbot_users": [],
+  "user_states": [],
+  "auto_increment": {
+    "bots": 2,
+    "buttons": 1,
+    "movies": 1,
+    "music": 1,
+    "subbot_users": 2,
+    "channels": 1,
+    "keywords": 2,
+    "promocodes": 3
+  },
+  "channels": [],
+  "keywords": [],
+  "promocodes": [],
+  "banned_users": []
+}
