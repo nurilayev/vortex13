@@ -55,7 +55,7 @@ const server = http.createServer((req, res) => {
 
 /**
  * ANTI-SLEEP TIZIMI: Render bepul rejimida botni uxlatib qo'ymasligi uchun
- * har 14 daqiqada o'ziga o'zi ping yuboradi.
+ * har 5 daqiqada o'ziga o'zi ping yuboradi — bot HECH QACHON uxlamaydi!
  */
 function startAntiSleep() {
     if (!RENDER_URL) {
@@ -63,21 +63,26 @@ function startAntiSleep() {
         return;
     }
 
-    console.log(`⚡️ Anti-Sleep tizimi yoqildi! Har 14 daqiqada ping: ${RENDER_URL}/health`);
+    console.log(`⚡️ Anti-Sleep tizimi yoqildi! Har 5 daqiqada ping: ${RENDER_URL}/health`);
 
-    setInterval(() => {
+    // Darhol birinchi ping
+    pingServer();
+
+    // Har 5 daqiqada takroriy ping
+    setInterval(pingServer, 5 * 60 * 1000);
+
+    function pingServer() {
         const pingUrl = `${RENDER_URL}/health`;
         https.get(pingUrl, (res) => {
-            console.log(`⚡️ Anti-Sleep ping muvaffaqiyatli! Status: ${res.statusCode}`);
+            console.log(`⚡️ Anti-Sleep ping OK! Status: ${res.statusCode}`);
         }).on('error', (err) => {
-            // HTTP bilan sinab ko'rish
             http.get(pingUrl.replace('https://', 'http://'), (res) => {
-                console.log(`⚡️ Anti-Sleep ping (HTTP) muvaffaqiyatli! Status: ${res.statusCode}`);
+                console.log(`⚡️ Anti-Sleep ping (HTTP) OK! Status: ${res.statusCode}`);
             }).on('error', (err2) => {
                 console.log(`⚠️ Anti-Sleep ping xatosi:`, err2.message);
             });
         });
-    }, 14 * 60 * 1000); // Har 14 daqiqada
+    }
 }
 
 function startWebServer() {
