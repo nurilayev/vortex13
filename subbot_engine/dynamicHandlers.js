@@ -138,12 +138,14 @@ function setupSubBotHandlers(botInstance, botData) {
             }
 
             if (botData.bot_type === 'music') {
-                keyboardRows.push(['🔥 Hafta Xitlari', '👥 Referal Havolam']);
-                keyboardRows.push(['👤 Profilim']);
+                keyboardRows.push(['🎵 Musika Qidirish', '🔥 Hafta Xitlari']);
+                keyboardRows.push(['🎶 TOP O\'zbek Qo\'shiqlari', '🌍 Xorijiy Xitlar']);
+                keyboardRows.push(['👥 Referal Havolam', '👤 Profilim']);
             } else if (botData.bot_type === 'cinema') {
                 keyboardRows.push(['🎬 Kinolar Katalogi', '👥 Referal Havolam']);
                 keyboardRows.push(['👤 Profilim']);
             } else {
+                keyboardRows.push(['🎵 Musika Qidirish', '🔥 Hafta Xitlari']);
                 keyboardRows.push(['👥 Referal Havolam', '👤 Profilim']);
             }
 
@@ -260,6 +262,66 @@ function setupSubBotHandlers(botInstance, botData) {
                 }
                 return;
             }
+        }
+
+        // Musika Qidirish tugmasi
+        if (text === '🎵 Musika Qidirish') {
+            return await ctx.reply(
+                `🎵 **MUSIKA QIDIRUV TIZIMI**\n` +
+                `═════════════════════════\n\n` +
+                `🔍 Istalgan qo'shiq nomini yoki ijrochi ismini yozing!\n\n` +
+                `✨ Misol: \`Benom guruhi\`, \`Ushbu dunyo\`, \`Shaxriyor\`\n\n` +
+                `🌍 O'zbek, Rus, Ingliz va boshqa tillardagi qo'shiqlarni qidirish mumkin!`,
+                { parse_mode: 'Markdown' }
+            );
+        }
+
+        // TOP O'zbek Qo'shiqlari
+        if (text === "🎶 TOP O'zbek Qo'shiqlari") {
+            await ctx.reply("⏳ **O'zbek musiqalari yuklanmoqda...**", { parse_mode: 'Markdown' });
+            const uzbekMusic = await globalMusic.searchGlobalMusic('uzbek music top');
+            if (uzbekMusic && uzbekMusic.length > 0) {
+                await ctx.reply(`🎶 **O'ZBEK MUSIQALARI TOP:**`, { parse_mode: 'Markdown' });
+                for (const song of uzbekMusic.slice(0, 5)) {
+                    const captionMsg = `🎶 **${song.title}** - ${song.artist}\n🤖 Bot: @${botData.bot_username}`;
+                    if (song.cover) {
+                        await ctx.replyWithPhoto(song.cover, {
+                            caption: captionMsg,
+                            parse_mode: 'Markdown',
+                            ...Markup.inlineKeyboard([[Markup.button.url('🎧 MP3 Eshitish', song.preview)]])
+                        });
+                    } else if (song.preview) {
+                        await ctx.replyWithAudio(song.preview, { caption: captionMsg, parse_mode: 'Markdown' });
+                    }
+                    await new Promise(res => setTimeout(res, 100));
+                }
+                return;
+            }
+            return await ctx.reply("😔 Hozircha natija topilmadi.", { parse_mode: 'Markdown' });
+        }
+
+        // Xorijiy Xitlar
+        if (text === '🌍 Xorijiy Xitlar') {
+            await ctx.reply("⏳ **Xorijiy xitlar yuklanmoqda...**", { parse_mode: 'Markdown' });
+            const foreignMusic = await globalMusic.getTopTrendingMusic();
+            if (foreignMusic && foreignMusic.length > 0) {
+                await ctx.reply(`🌍 **XORIJIY TOP XITLAR:**`, { parse_mode: 'Markdown' });
+                for (const song of foreignMusic.slice(0, 5)) {
+                    const captionMsg = `🌍 **${song.title}** - ${song.artist}\n🤖 Bot: @${botData.bot_username}`;
+                    if (song.cover) {
+                        await ctx.replyWithPhoto(song.cover, {
+                            caption: captionMsg,
+                            parse_mode: 'Markdown',
+                            ...Markup.inlineKeyboard([[Markup.button.url('🎧 MP3 Eshitish', song.preview)]])
+                        });
+                    } else if (song.preview) {
+                        await ctx.replyWithAudio(song.preview, { caption: captionMsg, parse_mode: 'Markdown' });
+                    }
+                    await new Promise(res => setTimeout(res, 100));
+                }
+                return;
+            }
+            return await ctx.reply("😔 Hozircha natija topilmadi.", { parse_mode: 'Markdown' });
         }
 
         // 5. Promokodlar tekshiruvi (/promo CODE yoki to'g'ridan to'g'ri kod)
