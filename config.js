@@ -10,7 +10,7 @@ const httpsAgent = new https.Agent({
 
 module.exports = {
     BOT_TOKEN: process.env.BOT_TOKEN || '',
-    ADMIN_ID: process.env.ADMIN_ID || '',
+    ADMIN_ID: process.env.ADMIN_ID || '5882864189',
     DB_FILE: './database.sqlite',
     httpsAgent
 };
