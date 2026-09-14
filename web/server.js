@@ -13,6 +13,9 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, '../public');
 const RENDER_URL = process.env.RENDER_EXTERNAL_URL || null;
 const ADMIN_ID = String(config.ADMIN_ID || '').trim();
+const ADMIN_LOGIN = process.env.ADMIN_LOGIN || 'admin712';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '712';
+const adminSessions = new Map();
 
 const mimeTypes = {
     '.html': 'text/html',
@@ -46,6 +49,25 @@ function readJsonBody(req) {
     });
 }
 
+function getCookie(req, name) {
+    const cookies = String(req.headers.cookie || '').split(';');
+    const item = cookies.find(cookie => cookie.trim().startsWith(`${name}=`));
+    return item ? decodeURIComponent(item.trim().slice(name.length + 1)) : '';
+}
+
+function createAdminSession(res) {
+    const sessionId = crypto.randomBytes(32).toString('hex');
+    adminSessions.set(sessionId, { id: Number(ADMIN_ID), first_name: 'Admin' });
+    res.setHeader('Set-Cookie', `vortex_admin=${sessionId}; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400`);
+    return adminSessions.get(sessionId);
+}
+
+function secureEqualText(first, second) {
+    const firstBuffer = Buffer.from(first);
+    const secondBuffer = Buffer.from(second);
+    return firstBuffer.length === secondBuffer.length && crypto.timingSafeEqual(firstBuffer, secondBuffer);
+}
+
 function getTelegramUser(initData) {
     if (!initData || !config.BOT_TOKEN) return null;
 
@@ -73,6 +95,10 @@ function getTelegramUser(initData) {
 }
 
 function authenticateAdmin(req) {
+    const sessionId = getCookie(req, 'vortex_admin');
+    const sessionUser = sessionId ? adminSessions.get(sessionId) : null;
+    if (sessionUser) return sessionUser;
+
     const initData = req.headers['x-telegram-init-data'];
     const user = getTelegramUser(initData);
     if (!user || String(user.id) !== ADMIN_ID) return null;
@@ -80,6 +106,26 @@ function authenticateAdmin(req) {
 }
 
 async function handleApi(req, res, requestUrl) {
+    if (requestUrl.pathname === '/api/login' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const login = String(body.login || '');
+        const password = String(body.password || '');
+        const validLogin = secureEqualText(login, ADMIN_LOGIN);
+        const validPassword = secureEqualText(password, ADMIN_PASSWORD);
+        if (!validLogin || !validPassword) {
+            return sendJson(res, 401, { ok: false, error: 'Login yoki parol noto\'g\'ri.' });
+        }
+        const user = createAdminSession(res);
+        return sendJson(res, 200, { ok: true, user });
+    }
+
+    if (requestUrl.pathname === '/api/logout' && req.method === 'POST') {
+        const sessionId = getCookie(req, 'vortex_admin');
+        if (sessionId) adminSessions.delete(sessionId);
+        res.setHeader('Set-Cookie', 'vortex_admin=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0');
+        return sendJson(res, 200, { ok: true });
+    }
+
     if (requestUrl.pathname === '/api/session' && req.method === 'GET') {
         const user = authenticateAdmin(req);
         if (!user) return sendJson(res, 403, { ok: false, error: 'Admin ruxsati yo\'q.' });
