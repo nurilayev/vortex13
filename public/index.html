@@ -44,12 +44,21 @@
             color: #60a5fa;
         }
         audio { accent-color: #3b82f6; }
+        .admin-locked .admin-only { display: none !important; }
     </style>
 </head>
-<body class="p-4 pb-24">
+<body class="admin-locked p-4 pb-24">
+
+    <div id="ruxsat-yoq" class="min-h-screen flex items-center justify-center">
+        <div class="shisha-karta p-6 rounded-2xl text-center max-w-sm">
+            <div class="text-4xl mb-3">🔒</div>
+            <h1 class="text-lg font-bold text-slate-100 mb-2">Admin panel yopiq</h1>
+            <p class="text-xs text-slate-400">Bu boshqaruv paneli faqat bot egasi uchun ochiladi.</p>
+        </div>
+    </div>
 
     <!-- SARLAVHA BO'LIMI -->
-    <div class="shisha-karta p-4 rounded-2xl flex items-center justify-between mb-5 shadow-2xl">
+    <div class="admin-only shisha-karta p-4 rounded-2xl flex items-center justify-between mb-5 shadow-2xl">
         <div class="flex items-center space-x-3">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30">⚡️</div>
             <div>
@@ -63,7 +72,7 @@
     </div>
 
     <!-- NAVIGATSIYA TABLARI -->
-    <div class="grid grid-cols-4 gap-2 mb-6">
+    <div class="admin-only grid grid-cols-4 gap-2 mb-6">
         <button onclick="tabAlmashtir('botlar')" id="tab-botlar"
             class="tab-btn tab-faol py-3 px-1 rounded-xl font-bold text-xs shisha-karta border border-transparent transition-all flex flex-col items-center justify-center gap-1 shadow-lg">
             <i class="fa-solid fa-robot text-base"></i>
@@ -87,7 +96,7 @@
     </div>
 
     <!-- TAB 1: MENING BOTLARIM -->
-    <div id="kontent-botlar" class="tab-kontent space-y-4">
+    <div id="kontent-botlar" class="admin-only tab-kontent space-y-4">
         <div class="flex items-center justify-between">
             <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Sizning 24/7 Botlaringiz</h2>
             <span class="text-xs text-blue-400 font-semibold" id="botlar-soni">Jami: 1 ta</span>
@@ -118,7 +127,7 @@
     </div>
 
     <!-- TAB 2: YANGI BOT YARATISH -->
-    <div id="kontent-yaratish" class="tab-kontent hidden space-y-4">
+    <div id="kontent-yaratish" class="admin-only tab-kontent hidden space-y-4">
         <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Yangi Bot — 24/7 Ishga Tushirish</h2>
 
         <div class="shisha-karta p-5 rounded-2xl space-y-4">
@@ -174,7 +183,7 @@
     </div>
 
     <!-- TAB 3: GLOBAL MUSIKA QIDIRUVI -->
-    <div id="kontent-musika" class="tab-kontent hidden space-y-4">
+    <div id="kontent-musika" class="admin-only tab-kontent hidden space-y-4">
         <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">🌍 Dunyo Bo'yicha Musika Qidiruvi</h2>
 
         <div class="flex space-x-2">
@@ -198,7 +207,7 @@
     </div>
 
     <!-- TAB 4: KINOLAR KATALOGI -->
-    <div id="kontent-kinolar" class="tab-kontent hidden space-y-4">
+    <div id="kontent-kinolar" class="admin-only tab-kontent hidden space-y-4">
         <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">🎬 Mashhur Kinolar Katalogi</h2>
         <p class="text-[11px] text-slate-500">Kino kodini Telegram botingizga yuboring va kinoni tomosha qiling</p>
 
@@ -253,6 +262,7 @@
         const tg = window.Telegram ? window.Telegram.WebApp : null;
         if (tg) {
             tg.expand();
+            tg.ready();
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 const ism = tg.initDataUnsafe.user.first_name || '';
                 document.getElementById('foydalanuvchi-ismi').innerText = `Salom, ${ism}! 👋`;
@@ -273,30 +283,6 @@
             faolTab.classList.remove('text-slate-400');
         }
 
-        // Yangi bot qo'shish
-        async function yangiBot() {
-            const token = document.getElementById('token-kiritish').value.trim();
-            const tur = document.getElementById('bot-turi').value;
-            if (!token) {
-                alert("⚠️ Iltimos, BotFather'dan olingan API Tokenni kiriting!");
-                return;
-            }
-
-            const tugma = document.getElementById('bot-qoshish-tugma');
-            const holat = document.getElementById('bot-yuklash-holati');
-            tugma.classList.add('hidden');
-            holat.classList.remove('hidden');
-
-            await new Promise(r => setTimeout(r, 2000));
-
-            holat.classList.add('hidden');
-            tugma.classList.remove('hidden');
-            document.getElementById('token-kiritish').value = '';
-
-            alert("✅ Bot muvaffaqiyatli ro'yxatdan o'tdi!\n\n⚡️ 24/7 Avto-Host rejimida ishga tushirildi.");
-            tabAlmashtir('botlar');
-        }
-
         // Musika qidiruvi
         async function musikaQidirish() {
             const qidiruv = document.getElementById('musika-qidiruv').value.trim();
@@ -310,21 +296,21 @@
                 </div>`;
 
             try {
-                const javob = await fetch(`https://api.deezer.com/search?q=${encodeURIComponent(qidiruv)}&limit=6`);
+                const javob = await adminApi(`/api/music/search?q=${encodeURIComponent(qidiruv)}`);
                 const malumot = await javob.json();
 
-                if (malumot && malumot.data && malumot.data.length > 0) {
-                    konteyner.innerHTML = `<p class="text-[11px] text-slate-500 mb-2">🎵 ${malumot.data.length} ta natija topildi:</p>` +
-                        malumot.data.map(qoshiq => `
+                if (malumot && malumot.results && malumot.results.length > 0) {
+                    konteyner.innerHTML = `<p class="text-[11px] text-slate-500 mb-2">🎵 ${malumot.results.length} ta natija topildi:</p>` +
+                        malumot.results.map(qoshiq => `
                         <div class="shisha-karta p-3 rounded-2xl space-y-2">
                             <div class="flex items-center space-x-3">
-                                <img src="${qoshiq.album ? qoshiq.album.cover_medium : ''}"
+                                <img src="${qoshiq.cover || ''}"
                                     class="w-12 h-12 rounded-xl object-cover flex-shrink-0"
                                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22><rect fill=%22%231e293b%22 width=%2248%22 height=%2248%22 rx=%228%22/><text y=%2232%22 x=%2214%22 font-size=%2224%22>🎵</text></svg>'">
                                 <div class="flex-1 min-w-0">
-                                    <span class="text-xs font-bold text-slate-100 block truncate">${qoshiq.title_short}</span>
-                                    <span class="text-[11px] text-slate-400 block truncate">${qoshiq.artist ? qoshiq.artist.name : 'Noma\'lum ijrochi'}</span>
-                                    <span class="text-[10px] text-slate-600">${qoshiq.album ? qoshiq.album.title : ''}</span>
+                                    <span class="text-xs font-bold text-slate-100 block truncate">${qoshiq.title}</span>
+                                    <span class="text-[11px] text-slate-400 block truncate">${qoshiq.artist || 'Noma\'lum ijrochi'}</span>
+                                    <span class="text-[10px] text-slate-600">${qoshiq.album || ''}</span>
                                 </div>
                             </div>
                             ${qoshiq.preview ? `<audio controls src="${qoshiq.preview}" class="w-full h-8 mt-1"></audio>` : '<p class="text-[10px] text-slate-600">Tinglash mavjud emas</p>'}
@@ -347,6 +333,89 @@
                     </div>`;
             }
         }
+
+        async function adminApi(path, options = {}) {
+            const headers = { ...(options.headers || {}) };
+            if (tg && tg.initData) headers['X-Telegram-Init-Data'] = tg.initData;
+            return fetch(path, { ...options, headers });
+        }
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>'"]/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            }[char]));
+        }
+
+        function renderBotlar(bots) {
+            const list = document.getElementById('botlar-royxati');
+            document.getElementById('botlar-soni').textContent = `Jami: ${bots.length} ta`;
+            if (!bots.length) {
+                list.innerHTML = '<div class="shisha-karta p-5 rounded-2xl text-center text-xs text-slate-400">Hali bot yaratilmagan.</div>';
+                return;
+            }
+
+            list.innerHTML = bots.map(bot => {
+                const active = Boolean(bot.is_active);
+                const type = bot.bot_type === 'cinema' ? '🎬 Kino Bot' : bot.bot_type === 'music' ? '🎵 Musika Bot' : '🔘 Universal Bot';
+                return `<div class="shisha-karta p-4 rounded-2xl space-y-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="min-w-0"><span class="font-bold text-slate-100 text-sm block truncate">@${escapeHtml(bot.bot_username)}</span>
+                        <span class="text-[11px] text-slate-400">${type}</span></div>
+                        <span class="px-2.5 py-1 rounded-lg ${active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'} text-[10px] font-bold">${active ? '🟢 FAOL' : '🔴 TO\'XTAGAN'}</span>
+                    </div>
+                    <button onclick="botHolatiniAlmashtir(${bot.id})" class="w-full py-2.5 rounded-xl ${active ? 'bg-red-500/15 text-red-300' : 'bg-emerald-500/15 text-emerald-300'} text-xs font-semibold border border-slate-700">${active ? '⏸ Botni to\'xtatish' : '▶️ Botni yoqish'}</button>
+                </div>`;
+            }).join('');
+        }
+
+        async function yuklashPaneli() {
+            const response = await adminApi('/api/session');
+            if (!response.ok) return;
+            const session = await response.json();
+            document.body.classList.remove('admin-locked');
+            document.getElementById('ruxsat-yoq').classList.add('hidden');
+            renderBotlar(session.bots || []);
+        }
+
+        async function botHolatiniAlmashtir(botId) {
+            const response = await adminApi(`/api/bots/${botId}/toggle`, { method: 'POST' });
+            if (!response.ok) return alert('Bot holatini o\'zgartirib bo\'lmadi.');
+            await yuklashPaneli();
+        }
+
+        async function yangiBot() {
+            const tokenInput = document.getElementById('token-kiritish');
+            const token = tokenInput.value.trim();
+            const botType = document.getElementById('bot-turi').value;
+            if (!token) return alert('⚠️ BotFather tokenini kiriting.');
+
+            const button = document.getElementById('bot-qoshish-tugma');
+            const loading = document.getElementById('bot-yuklash-holati');
+            button.disabled = true;
+            button.classList.add('hidden');
+            loading.classList.remove('hidden');
+            try {
+                const response = await adminApi('/api/bots', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, botType })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Bot qo\'shilmadi.');
+                tokenInput.value = '';
+                alert('✅ Bot muvaffaqiyatli qo\'shildi va ishga tushdi.');
+                tabAlmashtir('botlar');
+                await yuklashPaneli();
+            } catch (error) {
+                alert(`❌ ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.classList.remove('hidden');
+                loading.classList.add('hidden');
+            }
+        }
+
+        yuklashPaneli().catch(() => {});
     </script>
 </body>
 </html>
