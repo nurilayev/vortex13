@@ -161,6 +161,10 @@ async function main() {
             const botId = parseInt(data.replace('del_kw_start_', ''));
             return await keywordModule.startDeleteKeyword(ctx, botId);
         }
+        if (data.startsWith('confirm_del_kw_')) {
+            const keywordId = parseInt(data.replace('confirm_del_kw_', ''));
+            return await keywordModule.processDeleteKeyword(ctx, keywordId);
+        }
 
         // 3. Promokodlar Moduli Callbacks
         if (data.startsWith('bot_promocodes_')) {
@@ -174,6 +178,10 @@ async function main() {
         if (data.startsWith('del_promo_start_')) {
             const botId = parseInt(data.replace('del_promo_start_', ''));
             return await promoModule.startDeletePromo(ctx, botId);
+        }
+        if (data.startsWith('confirm_del_promo_')) {
+            const promoId = parseInt(data.replace('confirm_del_promo_', ''));
+            return await promoModule.processDeletePromo(ctx, promoId);
         }
 
         // 4. Xush Kelibsiz Xabari Callbacks
@@ -261,6 +269,10 @@ async function main() {
             const botId = parseInt(data.replace('del_movie_start_', ''));
             return await movieModule.startDeleteMovie(ctx, botId);
         }
+        if (data.startsWith('confirm_del_mov_')) {
+            const movieId = parseInt(data.replace('confirm_del_mov_', ''));
+            return await movieModule.processDeleteMovie(ctx, movieId);
+        }
 
         // Musika moduli callbacklari
         if (data.startsWith('bot_music_')) {
@@ -274,6 +286,10 @@ async function main() {
         if (data.startsWith('del_music_start_')) {
             const botId = parseInt(data.replace('del_music_start_', ''));
             return await musicModule.startDeleteMusic(ctx, botId);
+        }
+        if (data.startsWith('confirm_del_mus_')) {
+            const musicId = parseInt(data.replace('confirm_del_mus_', ''));
+            return await musicModule.processDeleteMusic(ctx, musicId);
         }
 
         // Rassilka callbacklari

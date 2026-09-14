@@ -126,10 +126,23 @@ async function startDeletePromo(ctx, botId) {
     });
 }
 
+async function processDeletePromo(ctx, promoId) {
+    const target = await db.getPromocodeById(promoId);
+    if (!target) return ctx.answerCbQuery('Promokod topilmadi.', { show_alert: true });
+
+    const ownerBot = await db.getBotById(target.bot_id);
+    if (!ownerBot || ownerBot.owner_id !== ctx.from.id) return ctx.answerCbQuery("Ruxsat yo'q.", { show_alert: true });
+
+    await db.deletePromocode(promoId);
+    await ctx.answerCbQuery("🗑 Promokod o'chirildi.");
+    return showPromoMenu(ctx, target.bot_id);
+}
+
 module.exports = {
     showPromoMenu,
     startAddPromo,
     processPromoCode,
     processPromoReward,
-    startDeletePromo
+    startDeletePromo,
+    processDeletePromo
 };

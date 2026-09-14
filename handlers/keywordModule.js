@@ -126,10 +126,23 @@ async function startDeleteKeyword(ctx, botId) {
     });
 }
 
+async function processDeleteKeyword(ctx, keywordId) {
+    const target = await db.getKeywordById(keywordId);
+    if (!target) return ctx.answerCbQuery("Kalit so'z topilmadi.", { show_alert: true });
+
+    const bot = await db.getBotById(target.bot_id);
+    if (!bot || bot.owner_id !== ctx.from.id) return ctx.answerCbQuery("Ruxsat yo'q.", { show_alert: true });
+
+    await db.deleteKeyword(keywordId);
+    await ctx.answerCbQuery("🗑 Kalit so'z o'chirildi.");
+    return showKeywordMenu(ctx, target.bot_id);
+}
+
 module.exports = {
     showKeywordMenu,
     startAddKeyword,
     processKeywordText,
     processKeywordResponse,
-    startDeleteKeyword
+    startDeleteKeyword,
+    processDeleteKeyword
 };

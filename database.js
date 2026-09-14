@@ -246,10 +246,27 @@ async function getMoviesByBot(botId) {
     return db.movies.filter(m => m.bot_id === botId).sort((a, b) => b.id - a.id);
 }
 
+async function getMovieById(movieId) {
+    const db = await loadDb();
+    return db.movies.find(movie => movie.id === movieId) || null;
+}
+
 async function getMovieByCode(botId, code) {
     const db = await loadDb();
     const searchCode = String(code).trim().toLowerCase();
     return db.movies.find(m => m.bot_id === botId && String(m.code).trim().toLowerCase() === searchCode) || null;
+}
+
+async function searchMovie(botId, query) {
+    const db = await loadDb();
+    const searchQuery = String(query).trim().toLowerCase();
+    if (!searchQuery) return null;
+
+    return db.movies.find(movie => {
+        const code = String(movie.code).trim().toLowerCase();
+        const title = String(movie.title).trim().toLowerCase();
+        return movie.bot_id === botId && (code === searchQuery || title.includes(searchQuery));
+    }) || null;
 }
 
 async function deleteMovie(movieId) {
@@ -277,6 +294,11 @@ async function addMusic(botId, title, artist, fileId) {
 async function getMusicByBot(botId) {
     const db = await loadDb();
     return db.music.filter(m => m.bot_id === botId).sort((a, b) => b.id - a.id);
+}
+
+async function getMusicById(musicId) {
+    const db = await loadDb();
+    return db.music.find(music => music.id === musicId) || null;
 }
 
 async function searchMusic(botId, query) {
@@ -364,6 +386,11 @@ async function getBotChannels(botId) {
     return db.channels.filter(c => c.bot_id === botId);
 }
 
+async function getChannelById(channelId) {
+    const db = await loadDb();
+    return db.channels.find(channel => channel.id === channelId) || null;
+}
+
 async function deleteChannel(channelId) {
     const db = await loadDb();
     db.channels = db.channels.filter(c => c.id === channelId);
@@ -390,6 +417,11 @@ async function addKeyword(botId, keyword, responseText, responseType = 'text', f
 async function getBotKeywords(botId) {
     const db = await loadDb();
     return db.keywords.filter(k => k.bot_id === botId);
+}
+
+async function getKeywordById(keywordId) {
+    const db = await loadDb();
+    return db.keywords.find(keyword => keyword.id === keywordId) || null;
 }
 
 async function deleteKeyword(keywordId) {
@@ -421,6 +453,11 @@ async function addPromocode(botId, code, rewardText, responseType = 'text', file
 async function getBotPromocodes(botId) {
     const db = await loadDb();
     return db.promocodes.filter(p => p.bot_id === botId);
+}
+
+async function getPromocodeById(promoId) {
+    const db = await loadDb();
+    return db.promocodes.find(promo => promo.id === promoId) || null;
 }
 
 async function usePromocode(botId, code, userId) {
@@ -499,10 +536,13 @@ module.exports = {
     deleteButton,
     addMovie,
     getMoviesByBot,
+    getMovieById,
     getMovieByCode,
+    searchMovie,
     deleteMovie,
     addMusic,
     getMusicByBot,
+    getMusicById,
     searchMusic,
     deleteMusic,
     addSubbotUser,
@@ -512,12 +552,15 @@ module.exports = {
     getTopReferrers,
     addChannel,
     getBotChannels,
+    getChannelById,
     deleteChannel,
     addKeyword,
     getBotKeywords,
+    getKeywordById,
     deleteKeyword,
     addPromocode,
     getBotPromocodes,
+    getPromocodeById,
     usePromocode,
     deletePromocode,
     banUser,

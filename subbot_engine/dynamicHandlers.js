@@ -370,7 +370,7 @@ function setupSubBotHandlers(botInstance, botData) {
         // 8. Kino Bot moduli tekshiruvi (Kino kodi yoki nomi bo'yicha)
         if (botData.bot_type === 'cinema' || botData.bot_type === 'custom') {
             // A. Avval lokal bazani tekshiramiz
-            const localMovie = await db.getMovieByCode(botId, text);
+            const localMovie = await db.searchMovie(botId, text);
             if (localMovie) {
                 const captionText = localMovie.caption || `🎬 **${localMovie.title}**\nKod: \`${localMovie.code}\``;
                 return await ctx.replyWithVideo(localMovie.file_id, {

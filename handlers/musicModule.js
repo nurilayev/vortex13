@@ -189,11 +189,26 @@ async function startDeleteMusic(ctx, botId) {
     });
 }
 
+async function processDeleteMusic(ctx, musicId) {
+    const music = await db.getMusicById(musicId);
+    if (!music) return ctx.answerCbQuery('Musika topilmadi.', { show_alert: true });
+
+    const bot = await db.getBotById(music.bot_id);
+    if (!bot || bot.owner_id !== ctx.from.id) {
+        return ctx.answerCbQuery('Ruxsat yo\'q.', { show_alert: true });
+    }
+
+    await db.deleteMusic(musicId);
+    await ctx.answerCbQuery("🗑 Musika o'chirildi.");
+    return showMusicMenu(ctx, music.bot_id);
+}
+
 module.exports = {
     showMusicMenu,
     startAddMusic,
     processMusicFile,
     processMusicTitle,
     processMusicArtist,
-    startDeleteMusic
+    startDeleteMusic,
+    processDeleteMusic
 };

@@ -103,8 +103,14 @@ async function startDeleteChannel(ctx, botId) {
 
 async function processDeleteChannel(ctx, channelId) {
     const dbData = require('../database');
+    const channel = await dbData.getChannelById(channelId);
+    if (!channel) {
+        return ctx.answerCbQuery('Kanal topilmadi.', { show_alert: true });
+    }
+
     await dbData.deleteChannel(channelId);
     await ctx.answerCbQuery("🗑 Kanal o'chirildi.");
+    return showChannelMenu(ctx, channel.bot_id);
 }
 
 module.exports = {

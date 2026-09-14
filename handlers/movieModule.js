@@ -78,7 +78,15 @@ async function processMovieCode(ctx) {
     }
 
     const userState = await db.getUserState(userId);
+    if (!userState || !userState.data?.bot_id) {
+        return ctx.reply('⚠️ Kino qo\'shish sessiyasi topilmadi. Jarayonni qaytadan boshlang.');
+    }
+
     const botId = userState.data.bot_id;
+
+    if (!text || text.length > 64) {
+        return ctx.reply('⚠️ Kino kodi 1-64 ta belgidan iborat bo\'lishi kerak.');
+    }
 
     // Kod takrorlanmasligini tekshirish
     const existing = await db.getMovieByCode(botId, text);
@@ -113,7 +121,15 @@ async function processMovieTitle(ctx) {
     }
 
     const userState = await db.getUserState(userId);
+    if (!userState || !userState.data?.bot_id || !userState.data?.code) {
+        return ctx.reply('⚠️ Kino qo\'shish sessiyasi topilmadi. Jarayonni qaytadan boshlang.');
+    }
+
     const { bot_id, code } = userState.data;
+
+    if (!text || text.length > 150) {
+        return ctx.reply('⚠️ Kino nomi 1-150 ta belgidan iborat bo\'lishi kerak.');
+    }
 
     await db.setUserState(userId, 'ADD_MOVIE_FILE', {
         bot_id,
@@ -187,11 +203,20 @@ async function startDeleteMovie(ctx, botId) {
  * Kinoni o'chirish
  */
 async function processDeleteMovie(ctx, movieId) {
-    const dbData = require('../database');
-    const movies = await dbData.getMoviesByBot(movieId); // search
-    await dbData.deleteMovie(movieId);
+    const userId = ctx.from.id;
+    const movie = await db.getMovieById(movieId);
+    if (!movie) {
+        return ctx.answerCbQuery('Kino topilmadi.', { show_alert: true });
+    }
+
+    const bot = await db.getBotById(movie.bot_id);
+    if (!bot || bot.owner_id !== userId) {
+        return ctx.answerCbQuery('Ruxsat yo\'q.', { show_alert: true });
+    }
+
+    await db.deleteMovie(movieId);
     await ctx.answerCbQuery("🗑 Kino o'chirildi.");
-    // showMenu
+    return showCinemaMenu(ctx, movie.bot_id);
 }
 
 module.exports = {
