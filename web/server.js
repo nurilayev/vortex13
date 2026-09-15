@@ -143,9 +143,28 @@ async function handleApi(req, res, requestUrl) {
         const botStats = await Promise.all(bots.map(async bot => ({
             bot_id: bot.id,
             members: await db.getSubbotUserCount(bot.id),
-            banned: (await db.getBannedUsers(bot.id)).length
+            banned: (await db.getBannedUsers(bot.id)).length,
+            analytics: await db.getAnalytics(bot.id, 7)
         })));
         return sendJson(res, 200, { ok: true, bots, users, botStats });
+    }
+
+    const analyticsMatch = requestUrl.pathname.match(/^\/api\/admin\/bots\/(\d+)\/analytics$/);
+    if (analyticsMatch && req.method === 'GET') {
+        const botId = Number(analyticsMatch[1]);
+        const bot = await db.getBotById(botId);
+        if (!bot || bot.owner_id !== user.id) return sendJson(res, 404, { ok: false, error: 'Bot topilmadi.' });
+        return sendJson(res, 200, { ok: true, events: await db.getAnalytics(botId, Number(requestUrl.searchParams.get('days')) || 7) });
+    }
+
+    const premiumMatch = requestUrl.pathname.match(/^\/api\/admin\/bots\/(\d+)\/premium\/(\d+)$/);
+    if (premiumMatch && (req.method === 'POST' || req.method === 'DELETE')) {
+        const botId = Number(premiumMatch[1]);
+        const targetUserId = Number(premiumMatch[2]);
+        const bot = await db.getBotById(botId);
+        if (!bot || bot.owner_id !== user.id) return sendJson(res, 404, { ok: false, error: 'Bot topilmadi.' });
+        await db.setPremiumUser(botId, targetUserId, req.method === 'POST', req.method === 'POST' ? requestUrl.searchParams.get('expires') : null);
+        return sendJson(res, 200, { ok: true, premium: req.method === 'POST' });
     }
 
     if (requestUrl.pathname === '/api/admin/backup' && req.method === 'GET') {
@@ -239,7 +258,7 @@ async function handleApi(req, res, requestUrl) {
         if (!bot || bot.owner_id !== user.id) return sendJson(res, 404, { ok: false, error: 'Bot topilmadi.' });
         const members = await db.getSubbotUsers(botId);
         const banned = new Set((await db.getBannedUsers(botId)).map(item => item.user_id));
-        return sendJson(res, 200, { ok: true, users: members.map(member => ({ ...member, banned: banned.has(member.user_id) })) });
+        return sendJson(res, 200, { ok: true, users: await Promise.all(members.map(async member => ({ ...member, banned: banned.has(member.user_id), premium: await db.isPremiumUser(botId, member.user_id) }))) });
     }
 
     if (requestUrl.pathname === '/api/music/search' && req.method === 'GET') {
@@ -365,9 +384,26 @@ function startAntiSleep() {
 function startWebServer() {
     server.listen(PORT, () => {
         console.log(`🌐 Web Server ishga tushdi: port ${PORT}`);
+        startAutomaticBackup();
         // Anti-Sleep tizimini yoqish
         startAntiSleep();
     });
+}
+
+function startAutomaticBackup() {
+    const backupDir = path.join(__dirname, '../backups');
+    const writeBackup = async () => {
+        try {
+            await fs.promises.mkdir(backupDir, { recursive: true });
+            const filePath = path.join(backupDir, `backup-${new Date().toISOString().slice(0, 10)}.json`);
+            await db.saveBackupFile(filePath);
+            console.log(`💾 Avtomatik backup saqlandi: ${filePath}`);
+        } catch (error) {
+            console.error('Automatic backup error:', error.message);
+        }
+    };
+    writeBackup();
+    setInterval(writeBackup, 24 * 60 * 60 * 1000);
 }
 
 function getWebAppUrl() {

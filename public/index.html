@@ -570,6 +570,14 @@
           placeholder="Welcome xabari"
           class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100"
         ></textarea>
+        <label class="text-[10px] text-slate-400"
+          >Panel rangi
+          <input
+            id="sozlama-rang"
+            type="color"
+            value="#2563eb"
+            class="ml-2 h-7 w-10 align-middle"
+        /></label>
         <button
           onclick="botSozlamalariniSaqlash()"
           class="w-full tugma-gradyan py-2.5 rounded-xl text-xs font-bold text-white"
@@ -783,10 +791,10 @@
               .map((bot, index) => {
                 const stats = data.botStats.find(
                   (item) => item.bot_id === bot.id,
-                ) || { members: 0, banned: 0 };
+                ) || { members: 0, banned: 0, analytics: [] };
                 const containerId = `admin-users-${bot.id}`;
                 return `<div class="border border-slate-700 rounded-xl p-3 space-y-2">
-            <div class="flex items-center justify-between gap-2"><span class="text-xs font-bold text-slate-200">@${escapeHtml(bot.bot_username)}</span><span class="text-[10px] text-slate-400">${stats.members} a'zo · ${stats.banned} blok</span></div>
+            <div class="flex items-center justify-between gap-2"><span class="text-xs font-bold text-slate-200">@${escapeHtml(bot.bot_username)}</span><span class="text-[10px] text-slate-400">${stats.members} a'zo · ${stats.banned} blok · ${stats.analytics.length} event</span></div>
             <div class="grid grid-cols-3 gap-2"><button onclick="adminBotFoydalanuvchilari(${bot.id}, '${containerId}')" class="rounded-lg bg-blue-500/15 text-blue-300 py-2 text-[10px]">👥 Userlar</button><button onclick="adminBotQaytaIshgaTushirish(${bot.id})" class="rounded-lg bg-emerald-500/15 text-emerald-300 py-2 text-[10px]">🔄 Restart</button><button onclick="adminBotOchirish(${bot.id})" class="rounded-lg bg-red-500/15 text-red-300 py-2 text-[10px]">🗑 O'chirish</button></div>
             <div id="${containerId}" class="space-y-1"></div>
           </div>`;
@@ -840,6 +848,7 @@
             botId,
             botType: document.getElementById("sozlama-tur").value,
             welcomeText: document.getElementById("sozlama-welcome").value,
+            theme: { accent: document.getElementById("sozlama-rang").value },
           }),
         });
         const result = await response.json();
@@ -878,7 +887,7 @@
           ? data.users
               .map(
                 (item) =>
-                  `<div class="flex items-center justify-between gap-2 bg-slate-950/40 rounded-lg px-2 py-1.5"><span class="text-[10px] text-slate-300">ID: ${item.user_id}</span><button onclick="adminUserHolatiniAlmashtir(${botId}, ${item.user_id}, ${item.banned}, '${containerId}')" class="text-[10px] ${item.banned ? "text-emerald-300" : "text-red-300"}">${item.banned ? "🔓 Ochish" : "🚫 Bloklash"}</button></div>`,
+                  `<div class="flex items-center justify-between gap-2 bg-slate-950/40 rounded-lg px-2 py-1.5"><span class="text-[10px] text-slate-300">ID: ${item.user_id}</span><span><button onclick="adminUserHolatiniAlmashtir(${botId}, ${item.user_id}, ${item.banned}, '${containerId}')" class="text-[10px] ${item.banned ? "text-emerald-300" : "text-red-300"}">${item.banned ? "🔓 Ochish" : "🚫 Bloklash"}</button> <button onclick="premiumHolatiniAlmashtir(${botId}, ${item.user_id}, ${item.premium}, '${containerId}')" class="text-[10px] text-yellow-300">${item.premium ? "💎 Off" : "💎 On"}</button></span></div>`,
               )
               .join("")
           : '<p class="text-[10px] text-slate-500">Bu botda user yo‘q.</p>';
@@ -898,6 +907,21 @@
           return alert("Foydalanuvchi holatini o'zgartirib bo'lmadi.");
         await adminBotFoydalanuvchilari(botId, containerId);
         await adminMalumotlariniYuklash();
+      }
+
+      async function premiumHolatiniAlmashtir(
+        botId,
+        userId,
+        premium,
+        containerId,
+      ) {
+        const response = await adminApi(
+          `/api/admin/bots/${botId}/premium/${userId}`,
+          { method: premium ? "DELETE" : "POST" },
+        );
+        if (!response.ok)
+          return alert("Premium holatini o'zgartirib bo'lmadi.");
+        await adminBotFoydalanuvchilari(botId, containerId);
       }
 
       async function adminBotQaytaIshgaTushirish(botId) {

@@ -16,6 +16,9 @@ const initialData = {
     keywords: [],
     promocodes: [],
     banned_users: [],
+    analytics: [],
+    playlists: [],
+    premium_users: [],
     auto_increment: {
         bots: 1,
         buttons: 1,
@@ -41,6 +44,9 @@ async function loadDb() {
         if (!dbData.keywords) dbData.keywords = [];
         if (!dbData.promocodes) dbData.promocodes = [];
         if (!dbData.banned_users) dbData.banned_users = [];
+        if (!dbData.analytics) dbData.analytics = [];
+        if (!dbData.playlists) dbData.playlists = [];
+        if (!dbData.premium_users) dbData.premium_users = [];
         if (!dbData.auto_increment.channels) dbData.auto_increment.channels = 1;
         if (!dbData.auto_increment.keywords) dbData.auto_increment.keywords = 1;
         if (!dbData.auto_increment.promocodes) dbData.auto_increment.promocodes = 1;
@@ -71,6 +77,57 @@ async function getSafeBackup() {
     const backup = JSON.parse(JSON.stringify(db));
     backup.bots = backup.bots.map(bot => ({ ...bot, bot_token: '[HIDDEN]' }));
     return backup;
+}
+
+async function saveBackupFile(filePath) {
+    const backup = await getSafeBackup();
+    await fs.writeFile(filePath, JSON.stringify(backup, null, 2), 'utf8');
+}
+
+async function trackEvent(botId, userId, event, value = '') {
+    const db = await loadDb();
+    db.analytics.push({ bot_id: botId, user_id: userId, event, value, created_at: new Date().toISOString() });
+    if (db.analytics.length > 50000) db.analytics.splice(0, db.analytics.length - 50000);
+    await saveDb();
+}
+
+async function getAnalytics(botId, days = 7) {
+    const db = await loadDb();
+    const since = Date.now() - days * 86400000;
+    return db.analytics.filter(item => item.bot_id === botId && new Date(item.created_at).getTime() >= since);
+}
+
+async function addPlaylistItem(botId, userId, song) {
+    const db = await loadDb();
+    const exists = db.playlists.some(item => item.bot_id === botId && item.user_id === userId && item.song_id === song.id);
+    if (!exists) db.playlists.push({ bot_id: botId, user_id: userId, ...song, added_at: new Date().toISOString() });
+    await saveDb();
+}
+
+async function getPlaylist(botId, userId) {
+    const db = await loadDb();
+    return db.playlists.filter(item => item.bot_id === botId && item.user_id === userId);
+}
+
+async function setPremiumUser(botId, userId, active = true, expiresAt = null) {
+    const db = await loadDb();
+    const index = db.premium_users.findIndex(item => item.bot_id === botId && item.user_id === userId);
+    const record = { bot_id: botId, user_id: userId, active, expires_at: expiresAt };
+    if (index >= 0) db.premium_users[index] = record;
+    else db.premium_users.push(record);
+    await saveDb();
+}
+
+async function isPremiumUser(botId, userId) {
+    const db = await loadDb();
+    const item = db.premium_users.find(record => record.bot_id === botId && record.user_id === userId && record.active);
+    return Boolean(item && (!item.expires_at || new Date(item.expires_at).getTime() > Date.now()));
+}
+
+async function getBotTheme(botId) {
+    const db = await loadDb();
+    const bot = db.bots.find(item => item.id === botId);
+    return bot?.theme || { accent: '#2563eb', welcome_style: 'default' };
 }
 
 // --- USER CRUD ---
@@ -156,6 +213,7 @@ async function updateBotSettings(botId, ownerId, settings = {}) {
 
     if (typeof settings.welcome_text === 'string') bot.welcome_text = settings.welcome_text.trim() || null;
     if (settings.bot_type && ['custom', 'cinema', 'music'].includes(settings.bot_type)) bot.bot_type = settings.bot_type;
+    if (settings.theme && typeof settings.theme === 'object') bot.theme = { ...bot.theme, ...settings.theme };
     await saveDb();
     return bot;
 }
@@ -550,6 +608,14 @@ module.exports = {
     createBot,
     updateWelcomeMsg,
     updateBotSettings,
+    saveBackupFile,
+    trackEvent,
+    getAnalytics,
+    addPlaylistItem,
+    getPlaylist,
+    setPremiumUser,
+    isPremiumUser,
+    getBotTheme,
     getUserBots,
     getBotById,
     getBotByToken,

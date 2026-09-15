@@ -83,6 +83,7 @@ function setupSubBotHandlers(botInstance, botData) {
 
             try {
                 await db.addSubbotUser(botId, userId, referrerId);
+                if (ctx.message?.text) await db.trackEvent(botId, userId, 'message', ctx.message.text.slice(0, 100));
             } catch (err) {
                 // Ignore
             }
@@ -184,12 +185,14 @@ function setupSubBotHandlers(botInstance, botData) {
             if (botData.bot_type === 'music') {
                 keyboardRows.push(['🎵 Musika Qidirish', '🔥 Hafta Xitlari']);
                 keyboardRows.push(['🎶 TOP O\'zbek Qo\'shiqlari', '🌍 Xorijiy Xitlar']);
+                keyboardRows.push(['🎼 Playlistim', '💎 Premium']);
                 keyboardRows.push(['👥 Referal Havolam', '👤 Profilim']);
             } else if (botData.bot_type === 'cinema') {
                 keyboardRows.push(['🎬 Kinolar Katalogi', '👥 Referal Havolam']);
-                keyboardRows.push(['👤 Profilim']);
+                keyboardRows.push(['💎 Premium', '👤 Profilim']);
             } else {
                 keyboardRows.push(['🎵 Musika Qidirish', '🔥 Hafta Xitlari']);
+                keyboardRows.push(['🎼 Playlistim', '💎 Premium']);
                 keyboardRows.push(['👥 Referal Havolam', '👤 Profilim']);
             }
 
@@ -276,6 +279,27 @@ function setupSubBotHandlers(botInstance, botData) {
             return await ctx.reply(profileMsg, { parse_mode: 'Markdown' });
         }
 
+        if (text.startsWith('/playlist ')) {
+            const query = text.slice('/playlist '.length).trim();
+            const results = await globalMusic.searchGlobalMusic(query);
+            const song = results.find(item => item.preview);
+            if (!song) return ctx.reply("😔 Playlistga qo'shish uchun qo'shiq topilmadi.");
+            await db.addPlaylistItem(botId, ctx.from.id, song);
+            return ctx.reply(`✅ **${song.title}** playlistingizga qo'shildi.`, { parse_mode: 'Markdown' });
+        }
+
+        if (text === '/playlist' || text === '🎼 Playlistim') {
+            const playlist = await db.getPlaylist(botId, ctx.from.id);
+            if (!playlist.length) return ctx.reply("🎼 Playlist hozircha bo'sh. Misol: /playlist Adele Hello");
+            for (const song of playlist.slice(-10)) await sendGlobalMusic(ctx, song, `🎼 **${song.title}** - ${song.artist}`);
+            return;
+        }
+
+        if (text === '💎 Premium') {
+            const premium = await db.isPremiumUser(botId, ctx.from.id);
+            return ctx.reply(premium ? '💎 Sizning Premium obunangiz faol.' : '💎 Premium obuna uchun bot adminiga murojaat qiling.');
+        }
+
         // 3. Kinolar Katalogi ("🎬 Kinolar Katalogi")
         if (text === '🎬 Kinolar Katalogi') {
             await ctx.reply("🎬 **TOP KINOLAR KATALOGI:**\n\n101 - Qasoskorlar: Intiho\n102 - Avatar 2: Suv Yo'li\n103 - Oppenxaymer\n104 - Forsaj 10\n105 - O'rgimchak Odam: Uyga Yo'l Yo'q\n106 - Interstellar\n\nKinoni ko'rish uchun mos kodni (masalan: 101) yuboring!", { parse_mode: 'Markdown' });
@@ -284,6 +308,7 @@ function setupSubBotHandlers(botInstance, botData) {
 
         // 4. Hafta Xitlari ("🔥 Hafta Xitlari")
         if (text === '🔥 Hafta Xitlari') {
+            await db.trackEvent(botId, ctx.from.id, 'top_music');
             await ctx.reply("⏳ **Dunyodagi eng mashhur Hafta Xitlari yuklanmoqda...**", { parse_mode: 'Markdown' });
             const topTracks = await globalMusic.getTopTrendingMusic();
             if (topTracks.length > 0) {
@@ -387,6 +412,7 @@ function setupSubBotHandlers(botInstance, botData) {
 
         // 8. Kino Bot moduli tekshiruvi (Kino kodi yoki nomi bo'yicha)
         if (botData.bot_type === 'cinema' || botData.bot_type === 'custom') {
+            await db.trackEvent(botId, ctx.from.id, 'cinema_search', text);
             // A. Avval lokal bazani tekshiramiz
             const localMovie = await db.searchMovie(botId, text);
             if (localMovie) {
@@ -413,6 +439,7 @@ function setupSubBotHandlers(botInstance, botData) {
 
         // 9. Musika Bot moduli tekshiruvi (Lokal va GLOBAL Dunyo Qidiruvi)
         if (botData.bot_type === 'music' || botData.bot_type === 'custom') {
+            await db.trackEvent(botId, ctx.from.id, 'music_search', text);
             const localMusic = await db.searchMusic(botId, text);
             if (localMusic && localMusic.length > 0) {
                 await ctx.reply(`🎵 **${localMusic.length}** ta musika lokal bazadan topildi:`, { parse_mode: 'Markdown' });
