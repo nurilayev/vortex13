@@ -136,6 +136,59 @@ async function handleApi(req, res, requestUrl) {
     const user = authenticateAdmin(req);
     if (!user) return sendJson(res, 403, { ok: false, error: 'Admin ruxsati yo\'q.' });
 
+    if (requestUrl.pathname === '/api/admin/overview' && req.method === 'GET') {
+        const bots = await db.getUserBots(user.id);
+        const users = await db.getAllUsers();
+        const botStats = await Promise.all(bots.map(async bot => ({
+            bot_id: bot.id,
+            members: await db.getSubbotUserCount(bot.id),
+            banned: (await db.getBannedUsers(bot.id)).length
+        })));
+        return sendJson(res, 200, { ok: true, bots, users, botStats });
+    }
+
+    const botMatch = requestUrl.pathname.match(/^\/api\/admin\/bots\/(\d+)$/);
+    if (botMatch && req.method === 'DELETE') {
+        const botId = Number(botMatch[1]);
+        const bot = await db.getBotById(botId);
+        if (!bot || bot.owner_id !== user.id) return sendJson(res, 404, { ok: false, error: 'Bot topilmadi.' });
+        await subbotRunner.stopBot(botId);
+        await db.deleteBot(botId, user.id);
+        return sendJson(res, 200, { ok: true });
+    }
+
+    const restartMatch = requestUrl.pathname.match(/^\/api\/admin\/bots\/(\d+)\/restart$/);
+    if (restartMatch && req.method === 'POST') {
+        const botId = Number(restartMatch[1]);
+        const bot = await db.getBotById(botId);
+        if (!bot || bot.owner_id !== user.id) return sendJson(res, 404, { ok: false, error: 'Bot topilmadi.' });
+        await subbotRunner.restartBot(bot);
+        return sendJson(res, 200, { ok: true });
+    }
+
+    const banMatch = requestUrl.pathname.match(/^\/api\/admin\/bots\/(\d+)\/users\/(\d+)\/ban$/);
+    if (banMatch && (req.method === 'POST' || req.method === 'DELETE')) {
+        const botId = Number(banMatch[1]);
+        const targetUserId = Number(banMatch[2]);
+        const bot = await db.getBotById(botId);
+        if (!bot || bot.owner_id !== user.id || !Number.isSafeInteger(targetUserId) || targetUserId <= 0) {
+            return sendJson(res, 404, { ok: false, error: 'Bot yoki foydalanuvchi topilmadi.' });
+        }
+        if (req.method === 'POST') await db.banUser(botId, targetUserId, 'Banned from Web App admin panel');
+        else await db.unbanUser(botId, targetUserId);
+        return sendJson(res, 200, { ok: true, banned: req.method === 'POST' });
+    }
+
+    const botUsersMatch = requestUrl.pathname.match(/^\/api\/admin\/bots\/(\d+)\/users$/);
+    if (botUsersMatch && req.method === 'GET') {
+        const botId = Number(botUsersMatch[1]);
+        const bot = await db.getBotById(botId);
+        if (!bot || bot.owner_id !== user.id) return sendJson(res, 404, { ok: false, error: 'Bot topilmadi.' });
+        const members = await db.getSubbotUsers(botId);
+        const banned = new Set((await db.getBannedUsers(botId)).map(item => item.user_id));
+        return sendJson(res, 200, { ok: true, users: members.map(member => ({ ...member, banned: banned.has(member.user_id) })) });
+    }
+
     if (requestUrl.pathname === '/api/music/search' && req.method === 'GET') {
         const query = requestUrl.searchParams.get('q') || '';
         const results = await globalMusic.searchGlobalMusic(query);

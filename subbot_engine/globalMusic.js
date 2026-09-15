@@ -82,7 +82,9 @@ async function getTopTrendingMusic() {
     } catch (err) {
         console.error("Top trending search error:", err.message);
     }
-    return [];
+
+    // Chart API ishlamasa, qidiruv API orqali zaxira top natijalarini qaytaramiz.
+    return (await searchGlobalMusic('global top music')).slice(0, 10);
 }
 
 /**

@@ -246,13 +246,13 @@ function setupSubBotHandlers(botInstance, botData) {
                 await ctx.reply(`🔥 **DUNYO BO'YICHA TOP 10 HAFTA XITLARI:**`, { parse_mode: 'Markdown' });
                 for (const song of topTracks) {
                     const captionMsg = `🔥 **${song.title}** - ${song.artist}\n🤖 Bot: @${botData.bot_username}`;
-                    if (song.cover) {
+                    if (song.cover && song.preview) {
                         await ctx.replyWithPhoto(song.cover, {
                             caption: captionMsg,
                             parse_mode: 'Markdown',
                             ...Markup.inlineKeyboard([[Markup.button.url('🎧 MP3 Eshitish', song.preview)]])
                         });
-                    } else {
+                    } else if (song.preview) {
                         await ctx.replyWithAudio(song.preview, {
                             caption: captionMsg,
                             parse_mode: 'Markdown'
@@ -262,6 +262,7 @@ function setupSubBotHandlers(botInstance, botData) {
                 }
                 return;
             }
+            return await ctx.reply("😔 Hozircha hafta xitlari topilmadi. Keyinroq qayta urinib ko'ring.", { parse_mode: 'Markdown' });
         }
 
         // Musika Qidirish tugmasi
@@ -284,7 +285,7 @@ function setupSubBotHandlers(botInstance, botData) {
                 await ctx.reply(`🎶 **O'ZBEK MUSIQALARI TOP:**`, { parse_mode: 'Markdown' });
                 for (const song of uzbekMusic.slice(0, 5)) {
                     const captionMsg = `🎶 **${song.title}** - ${song.artist}\n🤖 Bot: @${botData.bot_username}`;
-                    if (song.cover) {
+                    if (song.cover && song.preview) {
                         await ctx.replyWithPhoto(song.cover, {
                             caption: captionMsg,
                             parse_mode: 'Markdown',
@@ -308,7 +309,7 @@ function setupSubBotHandlers(botInstance, botData) {
                 await ctx.reply(`🌍 **XORIJIY TOP XITLAR:**`, { parse_mode: 'Markdown' });
                 for (const song of foreignMusic.slice(0, 5)) {
                     const captionMsg = `🌍 **${song.title}** - ${song.artist}\n🤖 Bot: @${botData.bot_username}`;
-                    if (song.cover) {
+                    if (song.cover && song.preview) {
                         await ctx.replyWithPhoto(song.cover, {
                             caption: captionMsg,
                             parse_mode: 'Markdown',

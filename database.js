@@ -345,6 +345,11 @@ async function getSubbotUsers(botId) {
     return db.subbot_users.filter(su => su.bot_id === botId).map(su => ({ user_id: su.user_id }));
 }
 
+async function getAllUsers() {
+    const db = await loadDb();
+    return db.users.slice().sort((first, second) => String(second.registered_at || '').localeCompare(String(first.registered_at || '')));
+}
+
 async function getReferralCount(botId, userId) {
     const db = await loadDb();
     return db.subbot_users.filter(su => su.bot_id === botId && su.referrer_id === userId).length;
@@ -548,6 +553,7 @@ module.exports = {
     addSubbotUser,
     getSubbotUserCount,
     getSubbotUsers,
+    getAllUsers,
     getReferralCount,
     getTopReferrers,
     addChannel,

@@ -1,18 +1,19 @@
 const { Markup } = require('telegraf');
 const db = require('../database');
+const config = require('../config');
 const webServer = require('../web/server');
 
 /**
  * Asosiy konstruktor botning /start menyusi va klaviatura tuzilishi.
  */
-function getMainKeyboard() {
+function getMainKeyboard(userId = null) {
     const webAppUrl = webServer.getWebAppUrl();
     const keyboard = [
         ['🤖 Yangi Bot Yaratish', '📂 Mening Botlarim'],
         ["ℹ️ Yordam / Qo'llanma"]
     ];
     // Faqat HTTPS URL bo'lganda Web App tugmasini qo'shamiz
-    if (webAppUrl && webAppUrl.startsWith('https://')) {
+    if (String(userId) === String(config.ADMIN_ID) && webAppUrl && webAppUrl.startsWith('https://')) {
         keyboard.unshift([Markup.button.webApp('🚀 Web App Boshqaruv Paneli', webAppUrl)]);
     }
     return Markup.keyboard(keyboard).resize();
@@ -44,7 +45,7 @@ async function handleStart(ctx) {
         `• 📥 **Obunachilarni Eksport Qilish**\n\n` +
         `👇 **Boshlash uchun pastdagi knopkalardan birini tanlang:**`;
 
-    await ctx.reply(welcomeMsg, { parse_mode: 'Markdown', ...getMainKeyboard() });
+    await ctx.reply(welcomeMsg, { parse_mode: 'Markdown', ...getMainKeyboard(userId) });
 }
 
 async function handleHelp(ctx) {
@@ -58,7 +59,7 @@ async function handleHelp(ctx) {
         `5️⃣ Konstruktor botga qaytib **"🤖 Yangi Bot Yaratish"** tugmasini bosing va tokeningizni yuboring!\n\n` +
         `⚡️ *Botingiz tayyor bo'lgach, barcha modullarni erkin sozlay olasiz!*`;
 
-    await ctx.reply(helpMsg, { parse_mode: 'Markdown', ...getMainKeyboard() });
+    await ctx.reply(helpMsg, { parse_mode: 'Markdown', ...getMainKeyboard(ctx.from.id) });
 }
 
 module.exports = {

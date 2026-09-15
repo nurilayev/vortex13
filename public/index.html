@@ -149,7 +149,7 @@
     </div>
 
     <!-- NAVIGATSIYA TABLARI -->
-    <div class="admin-only grid grid-cols-4 gap-2 mb-6">
+    <div class="admin-only grid grid-cols-5 gap-2 mb-6">
       <button
         onclick="tabAlmashtir('botlar')"
         id="tab-botlar"
@@ -181,6 +181,14 @@
       >
         <i class="fa-solid fa-film text-base"></i>
         <span>Kinolar</span>
+      </button>
+      <button
+        onclick="tabAlmashtir('admin')"
+        id="tab-admin"
+        class="tab-btn py-3 px-1 rounded-xl font-bold text-xs shisha-karta text-slate-400 border border-transparent transition-all flex flex-col items-center justify-center gap-1"
+      >
+        <i class="fa-solid fa-shield-halved text-base"></i>
+        <span>Admin</span>
       </button>
     </div>
 
@@ -498,6 +506,34 @@
       </div>
     </div>
 
+    <div id="kontent-admin" class="admin-only tab-kontent hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <h2
+          class="text-[11px] font-bold text-slate-400 uppercase tracking-widest"
+        >
+          🛡 Admin boshqaruvi
+        </h2>
+        <button
+          onclick="adminMalumotlariniYuklash()"
+          class="text-xs text-blue-400"
+        >
+          <i class="fa-solid fa-rotate"></i> Yangilash
+        </button>
+      </div>
+      <div id="admin-statistika" class="grid grid-cols-3 gap-2"></div>
+      <div class="shisha-karta p-4 rounded-2xl space-y-3">
+        <h3 class="text-xs font-bold text-slate-200">🤖 Botlar boshqaruvi</h3>
+        <div id="admin-botlar" class="space-y-2"></div>
+      </div>
+      <div class="shisha-karta p-4 rounded-2xl space-y-3">
+        <h3 class="text-xs font-bold text-slate-200">👥 Foydalanuvchilar</h3>
+        <div
+          id="admin-foydalanuvchilar"
+          class="space-y-2 max-h-80 overflow-y-auto"
+        ></div>
+      </div>
+    </div>
+
     <script>
       // Telegram WebApp SDK
       const tg = window.Telegram ? window.Telegram.WebApp : null;
@@ -638,6 +674,97 @@
           .join("");
       }
 
+      async function adminMalumotlariniYuklash() {
+        const response = await adminApi("/api/admin/overview");
+        if (!response.ok) return;
+        const data = await response.json();
+        document.getElementById("admin-statistika").innerHTML = `
+          <div class="shisha-karta p-3 rounded-xl text-center"><b class="text-lg text-blue-400">${data.bots.length}</b><span class="block text-[10px] text-slate-400">Botlar</span></div>
+          <div class="shisha-karta p-3 rounded-xl text-center"><b class="text-lg text-emerald-400">${data.users.length}</b><span class="block text-[10px] text-slate-400">Admin userlar</span></div>
+          <div class="shisha-karta p-3 rounded-xl text-center"><b class="text-lg text-orange-400">${data.botStats.reduce((sum, item) => sum + item.members, 0)}</b><span class="block text-[10px] text-slate-400">Bot a'zolari</span></div>`;
+        document.getElementById("admin-botlar").innerHTML = data.bots.length
+          ? data.bots
+              .map((bot, index) => {
+                const stats = data.botStats.find(
+                  (item) => item.bot_id === bot.id,
+                ) || { members: 0, banned: 0 };
+                const containerId = `admin-users-${bot.id}`;
+                return `<div class="border border-slate-700 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between gap-2"><span class="text-xs font-bold text-slate-200">@${escapeHtml(bot.bot_username)}</span><span class="text-[10px] text-slate-400">${stats.members} a'zo · ${stats.banned} blok</span></div>
+            <div class="grid grid-cols-3 gap-2"><button onclick="adminBotFoydalanuvchilari(${bot.id}, '${containerId}')" class="rounded-lg bg-blue-500/15 text-blue-300 py-2 text-[10px]">👥 Userlar</button><button onclick="adminBotQaytaIshgaTushirish(${bot.id})" class="rounded-lg bg-emerald-500/15 text-emerald-300 py-2 text-[10px]">🔄 Restart</button><button onclick="adminBotOchirish(${bot.id})" class="rounded-lg bg-red-500/15 text-red-300 py-2 text-[10px]">🗑 O'chirish</button></div>
+            <div id="${containerId}" class="space-y-1"></div>
+          </div>`;
+              })
+              .join("")
+          : '<p class="text-xs text-slate-500">Botlar mavjud emas.</p>';
+        document.getElementById("admin-foydalanuvchilar").innerHTML = data.users
+          .length
+          ? data.users
+              .map(
+                (item) =>
+                  `<div class="flex justify-between text-xs border-b border-slate-800 py-2"><span class="text-slate-300">${escapeHtml(item.first_name || "Foydalanuvchi")} ${item.username ? "@" + escapeHtml(item.username) : ""}</span><span class="text-slate-500">${item.user_id}</span></div>`,
+              )
+              .join("")
+          : '<p class="text-xs text-slate-500">Foydalanuvchilar mavjud emas.</p>';
+      }
+
+      async function adminBotFoydalanuvchilari(botId, containerId) {
+        const container = document.getElementById(containerId);
+        const response = await adminApi(`/api/admin/bots/${botId}/users`);
+        if (!response.ok) return;
+        const data = await response.json();
+        container.innerHTML = data.users.length
+          ? data.users
+              .map(
+                (item) =>
+                  `<div class="flex items-center justify-between gap-2 bg-slate-950/40 rounded-lg px-2 py-1.5"><span class="text-[10px] text-slate-300">ID: ${item.user_id}</span><button onclick="adminUserHolatiniAlmashtir(${botId}, ${item.user_id}, ${item.banned}, '${containerId}')" class="text-[10px] ${item.banned ? "text-emerald-300" : "text-red-300"}">${item.banned ? "🔓 Ochish" : "🚫 Bloklash"}</button></div>`,
+              )
+              .join("")
+          : '<p class="text-[10px] text-slate-500">Bu botda user yo‘q.</p>';
+      }
+
+      async function adminUserHolatiniAlmashtir(
+        botId,
+        userId,
+        banned,
+        containerId,
+      ) {
+        const response = await adminApi(
+          `/api/admin/bots/${botId}/users/${userId}/ban`,
+          { method: banned ? "DELETE" : "POST" },
+        );
+        if (!response.ok)
+          return alert("Foydalanuvchi holatini o'zgartirib bo'lmadi.");
+        await adminBotFoydalanuvchilari(botId, containerId);
+        await adminMalumotlariniYuklash();
+      }
+
+      async function adminBotQaytaIshgaTushirish(botId) {
+        const response = await adminApi(`/api/admin/bots/${botId}/restart`, {
+          method: "POST",
+        });
+        alert(
+          response.ok
+            ? "✅ Bot qayta ishga tushdi."
+            : "❌ Botni qayta ishga tushirib bo'lmadi.",
+        );
+      }
+
+      async function adminBotOchirish(botId) {
+        if (
+          !confirm(
+            "Bu bot va uning barcha ma'lumotlari o'chiriladi. Davom etilsinmi?",
+          )
+        )
+          return;
+        const response = await adminApi(`/api/admin/bots/${botId}`, {
+          method: "DELETE",
+        });
+        if (!response.ok) return alert("❌ Botni o'chirib bo'lmadi.");
+        await yuklashPaneli();
+        await adminMalumotlariniYuklash();
+      }
+
       async function yuklashPaneli() {
         const response = await adminApi("/api/session");
         if (!response.ok) return;
@@ -645,6 +772,7 @@
         document.body.classList.remove("admin-locked");
         document.getElementById("ruxsat-yoq").classList.add("hidden");
         renderBotlar(session.bots || []);
+        await adminMalumotlariniYuklash();
       }
 
       async function adminKirish(event) {
