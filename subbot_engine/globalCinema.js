@@ -140,6 +140,5 @@ function fetchJson(url) {
 module.exports = {
     searchGlobalCinema,
     searchCinemaCatalog,
-    globalMoviesCatalog,
     globalMoviesCatalog
 };

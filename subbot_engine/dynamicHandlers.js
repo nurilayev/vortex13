@@ -3,6 +3,47 @@ const db = require('../database');
 const globalMusic = require('./globalMusic');
 const globalCinema = require('./globalCinema');
 
+async function sendGlobalMusic(ctx, song, caption) {
+    if (!song.preview) {
+        return ctx.reply(`🎵 **${song.title}** - ${song.artist}\n\n⚠️ Bu qo'shiq uchun audio preview mavjud emas.`, {
+            parse_mode: 'Markdown'
+        });
+    }
+
+    try {
+        return await ctx.replyWithAudio(song.preview, {
+            title: song.title,
+            performer: song.artist,
+            caption,
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([[Markup.button.url('🎧 Online tinglash', song.preview)]])
+        });
+    } catch (error) {
+        console.error('Global audio send error:', error.message);
+        return ctx.reply(`${caption}\n\n🎧 Tinglash: ${song.preview}`, { parse_mode: 'Markdown' });
+    }
+}
+
+async function sendGlobalMovie(ctx, movieCaption, movie) {
+    try {
+        return await ctx.replyWithVideo(movie.video_url, {
+            caption: movieCaption,
+            parse_mode: 'Markdown',
+            ...Markup.inlineKeyboard([[Markup.button.url('🍿 Online tomosha qilish', movie.video_url)]])
+        });
+    } catch (error) {
+        console.error('Global video send error:', error.message);
+        if (movie.poster) {
+            return ctx.replyWithPhoto(movie.poster, {
+                caption: `${movieCaption}\n\n⚠️ Video faylini Telegramga yuborib bo'lmadi. Havola orqali oching.`,
+                parse_mode: 'Markdown',
+                ...Markup.inlineKeyboard([[Markup.button.url('🍿 Kinoni ochish', movie.video_url)]])
+            });
+        }
+        return ctx.reply(`🎬 ${movieCaption}\n\n🍿 ${movie.video_url}`, { parse_mode: 'Markdown' });
+    }
+}
+
 /**
  * Sub-bot uchun dinamik handlerlarni sozlaydi.
  * @param {Telegraf} botInstance 
@@ -246,18 +287,7 @@ function setupSubBotHandlers(botInstance, botData) {
                 await ctx.reply(`🔥 **DUNYO BO'YICHA TOP 10 HAFTA XITLARI:**`, { parse_mode: 'Markdown' });
                 for (const song of topTracks) {
                     const captionMsg = `🔥 **${song.title}** - ${song.artist}\n🤖 Bot: @${botData.bot_username}`;
-                    if (song.cover && song.preview) {
-                        await ctx.replyWithPhoto(song.cover, {
-                            caption: captionMsg,
-                            parse_mode: 'Markdown',
-                            ...Markup.inlineKeyboard([[Markup.button.url('🎧 MP3 Eshitish', song.preview)]])
-                        });
-                    } else if (song.preview) {
-                        await ctx.replyWithAudio(song.preview, {
-                            caption: captionMsg,
-                            parse_mode: 'Markdown'
-                        });
-                    }
+                    await sendGlobalMusic(ctx, song, captionMsg);
                     await new Promise(res => setTimeout(res, 100));
                 }
                 return;
@@ -285,15 +315,7 @@ function setupSubBotHandlers(botInstance, botData) {
                 await ctx.reply(`🎶 **O'ZBEK MUSIQALARI TOP:**`, { parse_mode: 'Markdown' });
                 for (const song of uzbekMusic.slice(0, 5)) {
                     const captionMsg = `🎶 **${song.title}** - ${song.artist}\n🤖 Bot: @${botData.bot_username}`;
-                    if (song.cover && song.preview) {
-                        await ctx.replyWithPhoto(song.cover, {
-                            caption: captionMsg,
-                            parse_mode: 'Markdown',
-                            ...Markup.inlineKeyboard([[Markup.button.url('🎧 MP3 Eshitish', song.preview)]])
-                        });
-                    } else if (song.preview) {
-                        await ctx.replyWithAudio(song.preview, { caption: captionMsg, parse_mode: 'Markdown' });
-                    }
+                    await sendGlobalMusic(ctx, song, captionMsg);
                     await new Promise(res => setTimeout(res, 100));
                 }
                 return;
@@ -309,15 +331,7 @@ function setupSubBotHandlers(botInstance, botData) {
                 await ctx.reply(`🌍 **XORIJIY TOP XITLAR:**`, { parse_mode: 'Markdown' });
                 for (const song of foreignMusic.slice(0, 5)) {
                     const captionMsg = `🌍 **${song.title}** - ${song.artist}\n🤖 Bot: @${botData.bot_username}`;
-                    if (song.cover && song.preview) {
-                        await ctx.replyWithPhoto(song.cover, {
-                            caption: captionMsg,
-                            parse_mode: 'Markdown',
-                            ...Markup.inlineKeyboard([[Markup.button.url('🎧 MP3 Eshitish', song.preview)]])
-                        });
-                    } else if (song.preview) {
-                        await ctx.replyWithAudio(song.preview, { caption: captionMsg, parse_mode: 'Markdown' });
-                    }
+                    await sendGlobalMusic(ctx, song, captionMsg);
                     await new Promise(res => setTimeout(res, 100));
                 }
                 return;
@@ -390,18 +404,7 @@ function setupSubBotHandlers(botInstance, botData) {
                     `📝 ${globalMovie.description}\n\n` +
                     `🤖 Bot: @${botData.bot_username}`;
 
-                if (globalMovie.poster) {
-                    return await ctx.replyWithPhoto(globalMovie.poster, {
-                        caption: movieCaption,
-                        parse_mode: 'Markdown',
-                        ...Markup.inlineKeyboard([[Markup.button.url('🍿 Kinoni Tomosha Qilish (HD)', globalMovie.video_url)]])
-                    });
-                } else {
-                    return await ctx.replyWithVideo(globalMovie.video_url, {
-                        caption: movieCaption,
-                        parse_mode: 'Markdown'
-                    });
-                }
+                return await sendGlobalMovie(ctx, movieCaption, globalMovie);
             }
         }
 
