@@ -213,16 +213,13 @@ function setupSubBotHandlers(botInstance, botData) {
             }
 
             if (botData.bot_type === 'music') {
-                keyboardRows.push(['🎵 Musika Qidirish', '🔥 Hafta Xitlari']);
-                keyboardRows.push(['🎶 TOP O\'zbek Qo\'shiqlari', '🌍 Xorijiy Xitlar']);
-                keyboardRows.push(['🎼 Playlistim', '💎 Premium']);
+                keyboardRows.push(['🎵 Musika Qidirish', '💎 Premium']);
                 keyboardRows.push(['👥 Referal Havolam', '👤 Profilim']);
             } else if (botData.bot_type === 'cinema') {
                 keyboardRows.push(['🎬 Kinolar Katalogi', '👥 Referal Havolam']);
                 keyboardRows.push(['💎 Premium', '👤 Profilim']);
             } else {
-                keyboardRows.push(['🎵 Musika Qidirish', '🔥 Hafta Xitlari']);
-                keyboardRows.push(['🎼 Playlistim', '💎 Premium']);
+                keyboardRows.push(['🎵 Musika Qidirish', '💎 Premium']);
                 keyboardRows.push(['👥 Referal Havolam', '👤 Profilim']);
             }
 
