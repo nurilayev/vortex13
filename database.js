@@ -66,6 +66,18 @@ async function loadDb() {
         }
         await saveDb();
     }
+
+    if (!dbData.channels) dbData.channels = [];
+    if (!dbData.keywords) dbData.keywords = [];
+    if (!dbData.promocodes) dbData.promocodes = [];
+    if (!dbData.banned_users) dbData.banned_users = [];
+    if (!dbData.analytics) dbData.analytics = [];
+    if (!dbData.playlists) dbData.playlists = [];
+    if (!dbData.premium_users) dbData.premium_users = [];
+    if (!dbData.auto_increment) dbData.auto_increment = { ...initialData.auto_increment };
+    if (!dbData.auto_increment.channels) dbData.auto_increment.channels = 1;
+    if (!dbData.auto_increment.keywords) dbData.auto_increment.keywords = 1;
+    if (!dbData.auto_increment.promocodes) dbData.auto_increment.promocodes = 1;
     return dbData;
 }
 
@@ -134,6 +146,19 @@ async function setPremiumUser(botId, userId, active = true, expiresAt = null) {
     if (index >= 0) db.premium_users[index] = record;
     else db.premium_users.push(record);
     await saveDb();
+}
+
+async function extendPremiumUser(botId, userId, days) {
+    const db = await loadDb();
+    const index = db.premium_users.findIndex(item => item.bot_id === botId && item.user_id === userId);
+    const current = index >= 0 && db.premium_users[index].expires_at ? new Date(db.premium_users[index].expires_at).getTime() : 0;
+    const start = Math.max(Date.now(), current);
+    const expiresAt = new Date(start + Number(days) * 86400000).toISOString();
+    const record = { bot_id: botId, user_id: userId, active: true, expires_at: expiresAt };
+    if (index >= 0) db.premium_users[index] = record;
+    else db.premium_users.push(record);
+    await saveDb();
+    return expiresAt;
 }
 
 async function isPremiumUser(botId, userId) {
@@ -632,6 +657,7 @@ module.exports = {
     addPlaylistItem,
     getPlaylist,
     setPremiumUser,
+    extendPremiumUser,
     isPremiumUser,
     getBotTheme,
     getUserBots,

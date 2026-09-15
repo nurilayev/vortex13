@@ -156,6 +156,36 @@ function setupSubBotHandlers(botInstance, botData) {
         return true;
     }
 
+    botInstance.action(/^premium_(30|90)$/, async ctx => {
+        const days = Number(ctx.match[1]);
+        await ctx.answerCbQuery();
+        await ctx.replyWithInvoice({
+            title: `Premium ${days} kun`,
+            description: `Botdagi Premium imkoniyatlar ${days} kun davomida faol bo'ladi.`,
+            payload: `premium:${botId}:${ctx.from.id}:${days}`,
+            provider_token: '',
+            currency: 'XTR',
+            prices: [{ label: `Premium ${days} kun`, amount: days === 30 ? 100 : 250 }]
+        });
+    });
+
+    botInstance.on('pre_checkout_query', async ctx => {
+        try {
+            await ctx.telegram.answerPreCheckoutQuery(ctx.update.pre_checkout_query.id, true);
+        } catch (error) {
+            console.error(`Premium pre-checkout error:`, error.message);
+        }
+    });
+
+    botInstance.on('successful_payment', async ctx => {
+        const payment = ctx.update.message.successful_payment;
+        const parts = String(payment.invoice_payload || '').split(':');
+        if (parts.length !== 4 || parts[0] !== 'premium' || Number(parts[1]) !== botId) return;
+        const days = Number(parts[3]);
+        const expiresAt = await db.extendPremiumUser(botId, ctx.from.id, days);
+        await ctx.reply(`💎 Premium muvaffaqiyatli yoqildi!\n\n⏳ Amal qilish muddati: ${new Date(expiresAt).toLocaleDateString('uz-UZ')}`);
+    });
+
     // Obunani tekshirish inline button callback
     botInstance.action('check_sub_status', async (ctx) => {
         const isOk = await checkMandatorySubscription(ctx);
@@ -297,7 +327,13 @@ function setupSubBotHandlers(botInstance, botData) {
 
         if (text === '💎 Premium') {
             const premium = await db.isPremiumUser(botId, ctx.from.id);
-            return ctx.reply(premium ? '💎 Sizning Premium obunangiz faol.' : '💎 Premium obuna uchun bot adminiga murojaat qiling.');
+            if (premium) return ctx.reply('💎 Sizning Premium obunangiz faol.');
+            return ctx.reply('💎 Premium tarifni tanlang:', {
+                ...Markup.inlineKeyboard([
+                    [Markup.button.callback('💎 30 kun - 100 Stars', 'premium_30')],
+                    [Markup.button.callback('💎 90 kun - 250 Stars', 'premium_90')]
+                ])
+            });
         }
 
         // 3. Kinolar Katalogi ("🎬 Kinolar Katalogi")
