@@ -13,7 +13,7 @@ async function sendGlobalMusic(ctx, song, caption) {
 
     try {
         const audioBuffer = await downloadMedia(song.preview, 10 * 1024 * 1024);
-        return await ctx.replyWithAudio(Input.fromBuffer(audioBuffer, `${song.title}.mp3`, 'audio/mpeg'), {
+        return await ctx.replyWithAudio(Input.fromBuffer(audioBuffer, `${song.title}.mp3`), {
             title: song.title,
             performer: song.artist,
             caption,
@@ -453,10 +453,15 @@ function setupSubBotHandlers(botInstance, botData) {
             const localMovie = await db.searchMovie(botId, text);
             if (localMovie) {
                 const captionText = localMovie.caption || `🎬 **${localMovie.title}**\nKod: \`${localMovie.code}\``;
-                return await ctx.replyWithVideo(localMovie.file_id, {
-                    caption: captionText,
-                    parse_mode: 'Markdown'
-                });
+                try {
+                    return await ctx.replyWithVideo(localMovie.file_id, {
+                        caption: captionText,
+                        parse_mode: 'Markdown'
+                    });
+                } catch (error) {
+                    console.error('Local movie send error:', error.message);
+                    return ctx.reply(`🎬 **${localMovie.title}** topildi, lekin video faylini yuborib bo'lmadi. Admin videoni qayta yuklashi kerak.`, { parse_mode: 'Markdown' });
+                }
             }
 
             // B. Agar lokal bazada bo'lmasa -> GLOBAL KINO ENGINE orqali qidiramiz

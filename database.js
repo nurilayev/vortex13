@@ -373,7 +373,7 @@ async function getMovieById(movieId) {
 async function getMovieByCode(botId, code) {
     const db = await loadDb();
     const searchCode = String(code).trim().toLowerCase();
-    return db.movies.find(m => m.bot_id === botId && String(m.code).trim().toLowerCase() === searchCode) || null;
+    return db.movies.find(m => String(m.bot_id) === String(botId) && String(m.code).trim().toLowerCase() === searchCode) || null;
 }
 
 async function searchMovie(botId, query) {
@@ -384,7 +384,7 @@ async function searchMovie(botId, query) {
     return db.movies.find(movie => {
         const code = String(movie.code).trim().toLowerCase();
         const title = String(movie.title).trim().toLowerCase();
-        return movie.bot_id === botId && (code === searchQuery || title.includes(searchQuery));
+        return String(movie.bot_id) === String(botId) && (code === searchQuery || title.includes(searchQuery));
     }) || null;
 }
 
