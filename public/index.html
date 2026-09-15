@@ -79,8 +79,8 @@
       }
     </style>
   </head>
-  <body class="admin-locked p-4 pb-24">
-    <div id="ruxsat-yoq" class="min-h-screen flex items-center justify-center">
+  <body class="p-4 pb-24">
+    <div id="ruxsat-yoq" class="hidden fixed inset-0 z-50 bg-slate-950/90 p-4 items-center justify-center">
       <div class="shisha-karta p-6 rounded-2xl text-center max-w-sm w-full">
         <div class="text-4xl mb-3">🔒</div>
         <h1 class="text-lg font-bold text-slate-100 mb-2">Admin panel</h1>
@@ -107,6 +107,13 @@
             class="w-full tugma-gradyan py-3 rounded-xl text-xs font-bold text-white"
           >
             🔐 Kirish
+          </button>
+          <button
+            type="button"
+            onclick="adminLoginOynasiniYopish()"
+            class="w-full py-2 rounded-xl text-xs text-slate-400 border border-slate-700"
+          >
+            Bekor qilish
           </button>
           <p
             id="login-xatosi"
@@ -549,6 +556,10 @@
 
       // Tab almashtirish funksiyasi
       function tabAlmashtir(tabNomi) {
+        if (tabNomi === "admin" && !adminAuthenticated) {
+          adminLoginOynasiniOchish();
+          return;
+        }
         document
           .querySelectorAll(".tab-kontent")
           .forEach((el) => el.classList.add("hidden"));
@@ -769,10 +780,24 @@
         const response = await adminApi("/api/session");
         if (!response.ok) return;
         const session = await response.json();
-        document.body.classList.remove("admin-locked");
-        document.getElementById("ruxsat-yoq").classList.add("hidden");
+        adminAuthenticated = true;
         renderBotlar(session.bots || []);
         await adminMalumotlariniYuklash();
+      }
+
+      let adminAuthenticated = false;
+
+      function adminLoginOynasiniOchish() {
+        const loginWindow = document.getElementById("ruxsat-yoq");
+        loginWindow.classList.remove("hidden");
+        loginWindow.classList.add("flex");
+        document.getElementById("admin-login").focus();
+      }
+
+      function adminLoginOynasiniYopish() {
+        const loginWindow = document.getElementById("ruxsat-yoq");
+        loginWindow.classList.add("hidden");
+        loginWindow.classList.remove("flex");
       }
 
       async function adminKirish(event) {
@@ -793,7 +818,11 @@
           errorBox.classList.remove("hidden");
           return;
         }
+            adminAuthenticated = true;
+            document.getElementById("ruxsat-yoq").classList.add("hidden");
+            document.getElementById("ruxsat-yoq").classList.remove("flex");
         await yuklashPaneli();
+            tabAlmashtir("admin");
       }
 
       async function botHolatiniAlmashtir(botId) {
@@ -836,7 +865,6 @@
         }
       }
 
-      yuklashPaneli().catch(() => {});
     </script>
   </body>
 </html>
