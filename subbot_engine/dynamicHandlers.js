@@ -3,6 +3,9 @@ const db = require('../database');
 const globalMusic = require('./globalMusic');
 const globalCinema = require('./globalCinema');
 const { downloadMedia } = require('./mediaDownloader');
+const freeServices = require('./freeServices');
+
+const quizSessions = new Map();
 
 async function sendGlobalMusic(ctx, song, caption) {
     if (!song.preview) {
@@ -169,6 +172,16 @@ function setupSubBotHandlers(botInstance, botData) {
         });
     });
 
+    botInstance.action(/^quiz_answer_(\d+)$/, async ctx => {
+        const session = quizSessions.get(`${botId}:${ctx.from.id}`);
+        if (!session) return ctx.answerCbQuery('Quiz sessiyasi tugagan.', { show_alert: true });
+        const answerIndex = Number(ctx.match[1]);
+        const correct = session.answers[answerIndex] === session.correct;
+        quizSessions.delete(`${botId}:${ctx.from.id}`);
+        await ctx.answerCbQuery(correct ? '✅ To‘g‘ri javob!' : '❌ Noto‘g‘ri javob!', { show_alert: true });
+        return ctx.reply(correct ? '🎉 Barakalla, to‘g‘ri javob!' : `❌ To‘g‘ri javob: ${session.correct}`);
+    });
+
     botInstance.on('pre_checkout_query', async ctx => {
         try {
             await ctx.telegram.answerPreCheckoutQuery(ctx.update.pre_checkout_query.id, true);
@@ -220,6 +233,8 @@ function setupSubBotHandlers(botInstance, botData) {
                 keyboardRows.push(['💎 Premium', '👤 Profilim']);
             } else {
                 keyboardRows.push(['🎵 Musika Qidirish', '💎 Premium']);
+                keyboardRows.push(['🌦 Ob-havo', '💱 Valyuta']);
+                keyboardRows.push(['🧠 Quiz', '🧰 Xizmatlar']);
                 keyboardRows.push(['👥 Referal Havolam', '👤 Profilim']);
             }
 
@@ -276,6 +291,54 @@ function setupSubBotHandlers(botInstance, botData) {
         if (!isSubOk) return;
 
         const text = ctx.message.text.trim();
+
+        if (text === '🌦 Ob-havo') {
+            return ctx.reply('🌦 Shahar nomini yuboring. Misol: /ob-havo Toshkent');
+        }
+
+        if (text.startsWith('/ob-havo ')) {
+            const city = text.slice('/ob-havo '.length).trim();
+            try {
+                const weather = await freeServices.getWeather(city);
+                if (!weather) return ctx.reply('⚠️ Shahar topilmadi.');
+                return ctx.reply(`🌦 **${weather.city}**\n🌡 Harorat: ${weather.temperature_2m}°C\n💧 Namlik: ${weather.relative_humidity_2m}%\n💨 Shamol: ${weather.wind_speed_10m} km/soat`, { parse_mode: 'Markdown' });
+            } catch (error) {
+                console.error('Weather error:', error.message);
+                return ctx.reply('⚠️ Ob-havo xizmatida vaqtinchalik xatolik.');
+            }
+        }
+
+        if (text === '💱 Valyuta') return ctx.reply('💱 Konvertatsiya uchun yozing. Misol: /kurs 100 USD UZS');
+
+        if (text.startsWith('/kurs ')) {
+            const parts = text.split(/\s+/);
+            const amount = Number(parts[1]);
+            const base = (parts[2] || 'USD').toUpperCase();
+            const target = (parts[3] || 'UZS').toUpperCase();
+            if (!Number.isFinite(amount) || amount <= 0) return ctx.reply('⚠️ Format: /kurs 100 USD UZS');
+            try {
+                const result = await freeServices.getCurrency(base, target, amount);
+                return ctx.reply(`💱 ${amount} ${base} = **${result.rate || 'N/A'} ${target}**`, { parse_mode: 'Markdown' });
+            } catch (error) {
+                console.error('Currency error:', error.message);
+                return ctx.reply('⚠️ Valyuta kursini olib bo‘lmadi.');
+            }
+        }
+
+        if (text === '🧰 Xizmatlar') return ctx.reply('🧰 Xizmatlar:\n🌦 /ob-havo Toshkent\n💱 /kurs 100 USD UZS\n🧠 /quiz');
+
+        if (text === '🧠 Quiz' || text === '/quiz') {
+            try {
+                const quiz = await freeServices.getQuiz();
+                if (!quiz) return ctx.reply('⚠️ Hozircha quiz topilmadi.');
+                quizSessions.set(`${botId}:${ctx.from.id}`, quiz);
+                const buttons = quiz.answers.map((answer, index) => [Markup.button.callback(`${index + 1}. ${answer}`, `quiz_answer_${index}`)]);
+                return ctx.reply(`🧠 **Quiz**\n\n${quiz.question}`, { parse_mode: 'Markdown', ...Markup.inlineKeyboard(buttons) });
+            } catch (error) {
+                console.error('Quiz error:', error.message);
+                return ctx.reply('⚠️ Quiz xizmatida vaqtinchalik xatolik.');
+            }
+        }
 
         // 1. Referal buyrug'i (/ref yoki "👥 Referal Havolam")
         if (text === '/ref' || text === '👥 Referal Havolam' || text === '👥 Referallarim') {
