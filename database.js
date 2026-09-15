@@ -2,7 +2,9 @@ const fs = require('fs').promises;
 const path = require('path');
 const config = require('./config');
 
-const DB_FILE = path.join(__dirname, 'database.json');
+const DB_FILE = path.join(config.DATA_DIR, 'database.json');
+const LEGACY_DB_FILE = path.join(__dirname, 'database.json');
+let saveQueue = Promise.resolve();
 
 const initialData = {
     users: [],
@@ -52,7 +54,16 @@ async function loadDb() {
         if (!dbData.auto_increment.promocodes) dbData.auto_increment.promocodes = 1;
 
     } catch (err) {
-        dbData = JSON.parse(JSON.stringify(initialData));
+        try {
+            if (DB_FILE !== LEGACY_DB_FILE) {
+                const legacyContent = await fs.readFile(LEGACY_DB_FILE, 'utf8');
+                dbData = JSON.parse(legacyContent);
+            } else {
+                throw err;
+            }
+        } catch (legacyError) {
+            dbData = JSON.parse(JSON.stringify(initialData));
+        }
         await saveDb();
     }
     return dbData;
@@ -60,11 +71,18 @@ async function loadDb() {
 
 async function saveDb() {
     if (!dbData) return;
-    try {
-        await fs.writeFile(DB_FILE, JSON.stringify(dbData, null, 2), 'utf8');
-    } catch (err) {
-        console.error("Ma'lumotlar bazasini saqlashda xatolik:", err.message);
-    }
+    const snapshot = JSON.stringify(dbData, null, 2);
+    saveQueue = saveQueue.then(async () => {
+        try {
+            await fs.mkdir(config.DATA_DIR, { recursive: true });
+            const tempFile = `${DB_FILE}.tmp`;
+            await fs.writeFile(tempFile, snapshot, 'utf8');
+            await fs.rename(tempFile, DB_FILE);
+        } catch (err) {
+            console.error("Ma'lumotlar bazasini saqlashda xatolik:", err.message);
+        }
+    });
+    return saveQueue;
 }
 
 async function initDb() {

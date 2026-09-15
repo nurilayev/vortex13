@@ -8,9 +8,12 @@ const httpsAgent = new https.Agent({
     rejectUnauthorized: false
 });
 
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+
 module.exports = {
     BOT_TOKEN: process.env.BOT_TOKEN || '',
     ADMIN_ID: process.env.ADMIN_ID || '5882864189',
+    DATA_DIR,
     DB_FILE: './database.sqlite',
     httpsAgent
 };

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: vortex13
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: vortex-data
+      mountPath: /var/data
+      sizeGB: 1

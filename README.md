@@ -58,6 +58,9 @@ yoki:
 node index.js
 ```
 
+### Render ma'lumotlarini saqlash
+Render'da database yo'qolmasligi uchun `render.yaml` persistent disk yaratadi va `DATA_DIR=/var/data` dan foydalanadi. Render Dashboard'da Blueprint orqali deploy qiling yoki Web Service'ga persistent diskni `/var/data` mount path bilan biriktiring. Aks holda bepul ephemeral disk restart/deploy paytida `database.json` ma'lumotlarini o'chirishi mumkin.
+
 ---
 
 ## 📂 Fayllar Tuzilishi
