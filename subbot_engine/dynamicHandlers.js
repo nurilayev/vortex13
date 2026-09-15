@@ -1,7 +1,8 @@
-const { Markup } = require('telegraf');
+const { Markup, Input } = require('telegraf');
 const db = require('../database');
 const globalMusic = require('./globalMusic');
 const globalCinema = require('./globalCinema');
+const { downloadMedia } = require('./mediaDownloader');
 
 async function sendGlobalMusic(ctx, song, caption) {
     if (!song.preview) {
@@ -11,7 +12,8 @@ async function sendGlobalMusic(ctx, song, caption) {
     }
 
     try {
-        return await ctx.replyWithAudio(song.preview, {
+        const audioBuffer = await downloadMedia(song.preview, 10 * 1024 * 1024);
+        return await ctx.replyWithAudio(Input.fromBuffer(audioBuffer, `${song.title}.mp3`, 'audio/mpeg'), {
             title: song.title,
             performer: song.artist,
             caption,
@@ -26,7 +28,8 @@ async function sendGlobalMusic(ctx, song, caption) {
 
 async function sendGlobalMovie(ctx, movieCaption, movie) {
     try {
-        return await ctx.replyWithVideo(movie.video_url, {
+        const videoBuffer = await downloadMedia(movie.video_url, 50 * 1024 * 1024);
+        return await ctx.replyWithVideo(Input.fromBuffer(videoBuffer, `${movie.title}.mp4`, 'video/mp4'), {
             caption: movieCaption,
             parse_mode: 'Markdown',
             ...Markup.inlineKeyboard([[Markup.button.url('🍿 Online tomosha qilish', movie.video_url)]])
