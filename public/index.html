@@ -80,7 +80,10 @@
     </style>
   </head>
   <body class="p-4 pb-24">
-    <div id="ruxsat-yoq" class="hidden fixed inset-0 z-50 bg-slate-950/90 p-4 items-center justify-center">
+    <div
+      id="ruxsat-yoq"
+      class="hidden fixed inset-0 z-50 bg-slate-950/90 p-4 items-center justify-center"
+    >
       <div class="shisha-karta p-6 rounded-2xl text-center max-w-sm w-full">
         <div class="text-4xl mb-3">🔒</div>
         <h1 class="text-lg font-bold text-slate-100 mb-2">Admin panel</h1>
@@ -406,6 +409,25 @@
       <p class="text-[11px] text-slate-500">
         Kino kodini Telegram botingizga yuboring va kinoni tomosha qiling
       </p>
+      <div class="grid grid-cols-3 gap-2">
+        <input
+          id="kino-qidiruv"
+          placeholder="Nom yoki kod"
+          class="bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100"
+        />
+        <input
+          id="kino-yil"
+          placeholder="Yil"
+          class="bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100"
+        />
+        <button
+          onclick="kinoQidirish()"
+          class="tugma-gradyan rounded-xl text-xs font-bold text-white"
+        >
+          🔎 Qidirish
+        </button>
+      </div>
+      <div id="kino-qidiruv-natijalari" class="grid grid-cols-2 gap-3"></div>
 
       <div class="grid grid-cols-2 gap-3">
         <div class="shisha-karta p-3 rounded-2xl space-y-2">
@@ -528,6 +550,59 @@
         </button>
       </div>
       <div id="admin-statistika" class="grid grid-cols-3 gap-2"></div>
+      <div class="shisha-karta p-4 rounded-2xl space-y-3">
+        <h3 class="text-xs font-bold text-slate-200">⚙️ Bot sozlamalari</h3>
+        <select
+          id="sozlama-bot"
+          class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100"
+        ></select>
+        <select
+          id="sozlama-tur"
+          class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100"
+        >
+          <option value="custom">🔘 Universal</option>
+          <option value="cinema">🎬 Kino</option>
+          <option value="music">🎵 Musika</option>
+        </select>
+        <textarea
+          id="sozlama-welcome"
+          rows="3"
+          placeholder="Welcome xabari"
+          class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100"
+        ></textarea>
+        <button
+          onclick="botSozlamalariniSaqlash()"
+          class="w-full tugma-gradyan py-2.5 rounded-xl text-xs font-bold text-white"
+        >
+          💾 Sozlamani saqlash
+        </button>
+      </div>
+      <div class="shisha-karta p-4 rounded-2xl space-y-3">
+        <h3 class="text-xs font-bold text-slate-200">📢 Broadcast va backup</h3>
+        <select
+          id="broadcast-bot"
+          class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100"
+        ></select>
+        <textarea
+          id="broadcast-xabar"
+          rows="3"
+          placeholder="Obunachilarga yuboriladigan xabar"
+          class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100"
+        ></textarea>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            onclick="broadcastYuborish()"
+            class="bg-orange-500/20 text-orange-300 py-2.5 rounded-xl text-xs font-bold"
+          >
+            📢 Yuborish</button
+          ><button
+            onclick="backupYuklash()"
+            class="bg-slate-700 text-slate-200 py-2.5 rounded-xl text-xs font-bold"
+          >
+            ⬇️ Backup
+          </button>
+        </div>
+      </div>
       <div class="shisha-karta p-4 rounded-2xl space-y-3">
         <h3 class="text-xs font-bold text-slate-200">🤖 Botlar boshqaruvi</h3>
         <div id="admin-botlar" class="space-y-2"></div>
@@ -689,6 +764,16 @@
         const response = await adminApi("/api/admin/overview");
         if (!response.ok) return;
         const data = await response.json();
+        const botOptions = data.bots
+          .map(
+            (bot) =>
+              `<option value="${bot.id}">@${escapeHtml(bot.bot_username)}</option>`,
+          )
+          .join("");
+        document.getElementById("sozlama-bot").innerHTML =
+          botOptions || '<option value="">Bot yo\'q</option>';
+        document.getElementById("broadcast-bot").innerHTML =
+          botOptions || '<option value="">Bot yo\'q</option>';
         document.getElementById("admin-statistika").innerHTML = `
           <div class="shisha-karta p-3 rounded-xl text-center"><b class="text-lg text-blue-400">${data.bots.length}</b><span class="block text-[10px] text-slate-400">Botlar</span></div>
           <div class="shisha-karta p-3 rounded-xl text-center"><b class="text-lg text-emerald-400">${data.users.length}</b><span class="block text-[10px] text-slate-400">Admin userlar</span></div>
@@ -717,6 +802,71 @@
               )
               .join("")
           : '<p class="text-xs text-slate-500">Foydalanuvchilar mavjud emas.</p>';
+      }
+
+      async function broadcastYuborish() {
+        const botId = document.getElementById("broadcast-bot").value;
+        const message = document.getElementById("broadcast-xabar").value.trim();
+        if (!botId || !message) return alert("Bot va xabarni kiriting.");
+        const response = await adminApi("/api/admin/broadcast", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ botId, message }),
+        });
+        const result = await response.json();
+        if (!response.ok)
+          return alert(result.error || "Broadcast yuborilmadi.");
+        alert(`✅ ${result.sent} ta userga yuborildi. Xato: ${result.failed}`);
+        document.getElementById("broadcast-xabar").value = "";
+      }
+
+      async function backupYuklash() {
+        const response = await adminApi("/api/admin/backup");
+        if (!response.ok) return alert("Backup tayyorlab bo'lmadi.");
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `vortex-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+      }
+
+      async function botSozlamalariniSaqlash() {
+        const botId = document.getElementById("sozlama-bot").value;
+        const response = await adminApi("/api/admin/bot-settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            botId,
+            botType: document.getElementById("sozlama-tur").value,
+            welcomeText: document.getElementById("sozlama-welcome").value,
+          }),
+        });
+        const result = await response.json();
+        alert(
+          response.ok
+            ? "✅ Bot sozlamalari saqlandi."
+            : result.error || "Sozlamalar saqlanmadi.",
+        );
+      }
+
+      async function kinoQidirish() {
+        const query = new URLSearchParams({
+          q: document.getElementById("kino-qidiruv").value,
+          year: document.getElementById("kino-yil").value,
+        });
+        const response = await adminApi(`/api/admin/cinema/search?${query}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        document.getElementById("kino-qidiruv-natijalari").innerHTML = data
+          .results.length
+          ? data.results
+              .map(
+                (movie) =>
+                  `<div class="shisha-karta p-3 rounded-2xl space-y-2"><img src="${movie.poster}" class="w-full h-40 object-cover rounded-xl" alt="${escapeHtml(movie.title)}"><span class="text-xs font-bold text-slate-100 block truncate">${escapeHtml(movie.title)}</span><span class="text-[10px] text-slate-400 block">${escapeHtml(movie.year)} · ${escapeHtml(movie.genre)}</span><span class="text-[10px] text-blue-400">Kod: ${escapeHtml(movie.code)}</span></div>`,
+              )
+              .join("")
+          : '<p class="col-span-2 text-center text-xs text-slate-500">Kino topilmadi.</p>';
       }
 
       async function adminBotFoydalanuvchilari(botId, containerId) {
@@ -818,11 +968,11 @@
           errorBox.classList.remove("hidden");
           return;
         }
-            adminAuthenticated = true;
-            document.getElementById("ruxsat-yoq").classList.add("hidden");
-            document.getElementById("ruxsat-yoq").classList.remove("flex");
+        adminAuthenticated = true;
+        document.getElementById("ruxsat-yoq").classList.add("hidden");
+        document.getElementById("ruxsat-yoq").classList.remove("flex");
         await yuklashPaneli();
-            tabAlmashtir("admin");
+        tabAlmashtir("admin");
       }
 
       async function botHolatiniAlmashtir(botId) {
@@ -864,7 +1014,6 @@
           loading.classList.add("hidden");
         }
       }
-
     </script>
   </body>
 </html>

@@ -413,7 +413,8 @@ function setupSubBotHandlers(botInstance, botData) {
                 for (const song of localMusic) {
                     await ctx.replyWithAudio(song.file_id, {
                         caption: `🎵 **${song.title}** ${song.artist ? `- ${song.artist}` : ''}`,
-                        parse_mode: 'Markdown'
+                        parse_mode: 'Markdown',
+                        ...(song.cover_file_id ? { thumbnail: song.cover_file_id } : {})
                     });
                 }
                 return;

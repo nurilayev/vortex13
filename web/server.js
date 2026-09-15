@@ -8,6 +8,7 @@ const config = require('../config');
 const db = require('../database');
 const subbotRunner = require('../subbot_engine/runner');
 const globalMusic = require('../subbot_engine/globalMusic');
+const globalCinema = require('../subbot_engine/globalCinema');
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, '../public');
@@ -145,6 +146,58 @@ async function handleApi(req, res, requestUrl) {
             banned: (await db.getBannedUsers(bot.id)).length
         })));
         return sendJson(res, 200, { ok: true, bots, users, botStats });
+    }
+
+    if (requestUrl.pathname === '/api/admin/backup' && req.method === 'GET') {
+        const backup = await db.getSafeBackup();
+        res.writeHead(200, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Content-Disposition': `attachment; filename="vortex-backup-${new Date().toISOString().slice(0, 10)}.json"`
+        });
+        return res.end(JSON.stringify(backup, null, 2));
+    }
+
+    if (requestUrl.pathname === '/api/admin/broadcast' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const botId = Number(body.botId);
+        const message = String(body.message || '').trim();
+        const bot = await db.getBotById(botId);
+        if (!bot || bot.owner_id !== user.id) return sendJson(res, 404, { ok: false, error: 'Bot topilmadi.' });
+        if (!message || message.length > 4096) return sendJson(res, 400, { ok: false, error: 'Xabar 1-4096 belgi bo‘lishi kerak.' });
+        const botInstance = subbotRunner.getBotInstance(botId);
+        if (!botInstance) return sendJson(res, 409, { ok: false, error: 'Bot hozir faol emas.' });
+        const subscribers = await db.getSubbotUsers(botId);
+        let sent = 0;
+        for (const subscriber of subscribers) {
+            try {
+                await botInstance.telegram.sendMessage(subscriber.user_id, message);
+                sent++;
+            } catch (error) {
+                // Blocked or unavailable users are counted as failed deliveries.
+            }
+            await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        return sendJson(res, 200, { ok: true, sent, failed: subscribers.length - sent });
+    }
+
+    if (requestUrl.pathname === '/api/admin/cinema/search' && req.method === 'GET') {
+        const results = globalCinema.searchCinemaCatalog(
+            requestUrl.searchParams.get('q') || '',
+            requestUrl.searchParams.get('year') || '',
+            requestUrl.searchParams.get('genre') || ''
+        );
+        return sendJson(res, 200, { ok: true, results });
+    }
+
+    if (requestUrl.pathname === '/api/admin/bot-settings' && req.method === 'POST') {
+        const body = await readJsonBody(req);
+        const bot = await db.updateBotSettings(Number(body.botId), user.id, {
+            welcome_text: body.welcomeText,
+            bot_type: body.botType
+        });
+        if (!bot) return sendJson(res, 404, { ok: false, error: 'Bot topilmadi.' });
+        await subbotRunner.restartBot(bot);
+        return sendJson(res, 200, { ok: true, bot: { ...bot, bot_token: undefined } });
     }
 
     const botMatch = requestUrl.pathname.match(/^\/api\/admin\/bots\/(\d+)$/);

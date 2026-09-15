@@ -66,6 +66,13 @@ async function initDb() {
     console.log("✅ Ma'lumotlar bazasi (7 ta yangi modullar bilan) muvaffaqiyatli ishga tushirildi.");
 }
 
+async function getSafeBackup() {
+    const db = await loadDb();
+    const backup = JSON.parse(JSON.stringify(db));
+    backup.bots = backup.bots.map(bot => ({ ...bot, bot_token: '[HIDDEN]' }));
+    return backup;
+}
+
 // --- USER CRUD ---
 async function saveUser(userId, username, firstName) {
     const db = await loadDb();
@@ -140,6 +147,17 @@ async function updateWelcomeMsg(botId, welcomeText, mediaId = null, mediaType = 
         bot.welcome_media_type = mediaType;
         await saveDb();
     }
+}
+
+async function updateBotSettings(botId, ownerId, settings = {}) {
+    const db = await loadDb();
+    const bot = db.bots.find(item => item.id === botId && item.owner_id === ownerId);
+    if (!bot) return null;
+
+    if (typeof settings.welcome_text === 'string') bot.welcome_text = settings.welcome_text.trim() || null;
+    if (settings.bot_type && ['custom', 'cinema', 'music'].includes(settings.bot_type)) bot.bot_type = settings.bot_type;
+    await saveDb();
+    return bot;
 }
 
 async function getUserBots(ownerId) {
@@ -276,7 +294,7 @@ async function deleteMovie(movieId) {
 }
 
 // --- MUSIC CRUD ---
-async function addMusic(botId, title, artist, fileId) {
+async function addMusic(botId, title, artist, fileId, coverFileId = null) {
     const db = await loadDb();
     const newId = db.auto_increment.music++;
     const musicObj = {
@@ -284,7 +302,8 @@ async function addMusic(botId, title, artist, fileId) {
         bot_id: botId,
         title,
         artist,
-        file_id: fileId
+        file_id: fileId,
+        cover_file_id: coverFileId
     };
     db.music.push(musicObj);
     await saveDb();
@@ -523,12 +542,14 @@ async function getBannedUsers(botId) {
 
 module.exports = {
     initDb,
+    getSafeBackup,
     saveUser,
     setUserState,
     getUserState,
     clearUserState,
     createBot,
     updateWelcomeMsg,
+    updateBotSettings,
     getUserBots,
     getBotById,
     getBotByToken,

@@ -81,12 +81,14 @@ async function processMusicFile(ctx) {
     let fileId = null;
     let title = '';
     let artist = '';
+    let coverFileId = null;
 
     if (ctx.message.audio) {
         const audio = ctx.message.audio;
         fileId = audio.file_id;
         title = audio.title || audio.file_name || 'Noma\'lum Qo\'shiq';
         artist = audio.performer || 'Noma\'lum Ijrochi';
+        coverFileId = audio.thumbnail?.file_id || null;
     } else if (ctx.message.document && ctx.message.document.mime_type?.startsWith('audio/')) {
         fileId = ctx.message.document.file_id;
         title = ctx.message.document.file_name || 'Noma\'lum Qo\'shiq';
@@ -99,7 +101,8 @@ async function processMusicFile(ctx) {
         bot_id,
         file_id: fileId,
         default_title: title,
-        default_artist: artist
+        default_artist: artist,
+        cover_file_id: coverFileId
     });
 
     await ctx.reply(
@@ -152,7 +155,7 @@ async function processMusicArtist(ctx) {
 
     if (!userState || userState.step !== 'ADD_MUSIC_ARTIST') return;
 
-    const { bot_id, file_id, title, default_artist } = userState.data;
+    const { bot_id, file_id, title, default_artist, cover_file_id } = userState.data;
 
     if (text === '⬅️ Bekor qilish') {
         await db.clearUserState(userId);
@@ -161,7 +164,7 @@ async function processMusicArtist(ctx) {
 
     const artist = (text.toUpperCase() === 'OK') ? default_artist : text;
 
-    await db.addMusic(bot_id, title, artist, file_id);
+    await db.addMusic(bot_id, title, artist, file_id, cover_file_id);
     await db.clearUserState(userId);
 
     await ctx.reply(`✅ **${title}** ${artist ? `(${artist})` : ''} qo'shig'i bazaga saqlandi!`, { parse_mode: 'Markdown' });

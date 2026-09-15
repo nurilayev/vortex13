@@ -65,6 +65,18 @@ const globalMoviesCatalog = [
     }
 ];
 
+function searchCinemaCatalog(query = '', year = '', genre = '') {
+    const cleanQuery = String(query).trim().toLowerCase();
+    const cleanYear = String(year).trim();
+    const cleanGenre = String(genre).trim().toLowerCase();
+    return globalMoviesCatalog.filter(movie => {
+        const textMatch = !cleanQuery || [movie.code, movie.title, movie.description].some(value => String(value).toLowerCase().includes(cleanQuery));
+        const yearMatch = !cleanYear || String(movie.year) === cleanYear;
+        const genreMatch = !cleanGenre || String(movie.genre).toLowerCase().includes(cleanGenre);
+        return textMatch && yearMatch && genreMatch;
+    });
+}
+
 /**
  * Global Kino Qidiruv Engine (Kod yoki Nomi bo'yicha)
  */
@@ -127,5 +139,7 @@ function fetchJson(url) {
 
 module.exports = {
     searchGlobalCinema,
+    searchCinemaCatalog,
+    globalMoviesCatalog,
     globalMoviesCatalog
 };
