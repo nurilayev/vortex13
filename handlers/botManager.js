@@ -26,7 +26,7 @@ async function showMyBots(ctx) {
 
     const inlineButtons = bots.map(b => {
         const statusEmoji = b.is_active ? '🟢' : '🔴';
-        const typeEmoji = b.bot_type === 'cinema' ? '🎬' : b.bot_type === 'music' ? '🎵' : '🔘';
+        const typeEmoji = b.bot_type === 'cinema' ? '🎬' : b.bot_type === 'music' ? '🎵' : b.bot_type === 'service' ? '🌟' : '🔘';
         return [Markup.button.callback(`${statusEmoji} ${typeEmoji} @${b.bot_username}`, `manage_bot_${b.id}`)];
     });
 
@@ -62,7 +62,7 @@ async function showBotPanel(ctx, botId) {
 
     const userCount = await db.getSubbotUserCount(botId);
     const statusText = bot.is_active ? '🟢 Faol (Ishlamoqda)' : '🔴 To\'xtatilgan';
-    const typeName = bot.bot_type === 'cinema' ? '🎬 Kino Bot' : bot.bot_type === 'music' ? '🎵 Musika Bot' : '🔘 Universal Bot';
+    const typeName = bot.bot_type === 'cinema' ? '🎬 Kino Bot' : bot.bot_type === 'music' ? '🎵 Musika Bot' : bot.bot_type === 'service' ? '🌟 Service Bot' : '🔘 Universal Bot';
 
     const safeUser = escapeMd(bot.bot_username);
     const safeName = escapeMd(bot.bot_name);

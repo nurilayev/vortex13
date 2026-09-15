@@ -57,6 +57,7 @@ async function sendGlobalMovie(ctx, movieCaption, movie) {
  */
 function setupSubBotHandlers(botInstance, botData) {
     const botId = botData.id;
+    const isFeatureBot = botData.bot_type === 'service' || String(botData.bot_username || '').replace('@', '').toLowerCase() === 'vortex712_bot';
 
     // 1. Bloklanganlar va Obunachini ro'yxatga olish Middleware
     botInstance.use(async (ctx, next) => {
@@ -227,14 +228,18 @@ function setupSubBotHandlers(botInstance, botData) {
 
             if (botData.bot_type === 'music') {
                 keyboardRows.push(['🎵 Musika Qidirish', '💎 Premium']);
+                if (isFeatureBot) keyboardRows.push(['🌦 Ob-havo', '💱 Valyuta'], ['🧠 Quiz', '🧰 Xizmatlar']);
                 keyboardRows.push(['👥 Referal Havolam', '👤 Profilim']);
             } else if (botData.bot_type === 'cinema') {
                 keyboardRows.push(['🎬 Kinolar Katalogi', '👥 Referal Havolam']);
+                if (isFeatureBot) keyboardRows.push(['🌦 Ob-havo', '💱 Valyuta'], ['🧠 Quiz', '🧰 Xizmatlar']);
                 keyboardRows.push(['💎 Premium', '👤 Profilim']);
             } else {
                 keyboardRows.push(['🎵 Musika Qidirish', '💎 Premium']);
-                keyboardRows.push(['🌦 Ob-havo', '💱 Valyuta']);
-                keyboardRows.push(['🧠 Quiz', '🧰 Xizmatlar']);
+                if (isFeatureBot) {
+                    keyboardRows.push(['🌦 Ob-havo', '💱 Valyuta']);
+                    keyboardRows.push(['🧠 Quiz', '🧰 Xizmatlar']);
+                }
                 keyboardRows.push(['👥 Referal Havolam', '👤 Profilim']);
             }
 
@@ -292,11 +297,11 @@ function setupSubBotHandlers(botInstance, botData) {
 
         const text = ctx.message.text.trim();
 
-        if (text === '🌦 Ob-havo') {
+        if (isFeatureBot && text === '🌦 Ob-havo') {
             return ctx.reply('🌦 Shahar nomini yuboring. Misol: /ob-havo Toshkent');
         }
 
-        if (text.startsWith('/ob-havo ')) {
+        if (isFeatureBot && text.startsWith('/ob-havo ')) {
             const city = text.slice('/ob-havo '.length).trim();
             try {
                 const weather = await freeServices.getWeather(city);
@@ -308,9 +313,9 @@ function setupSubBotHandlers(botInstance, botData) {
             }
         }
 
-        if (text === '💱 Valyuta') return ctx.reply('💱 Konvertatsiya uchun yozing. Misol: /kurs 100 USD UZS');
+        if (isFeatureBot && text === '💱 Valyuta') return ctx.reply('💱 Konvertatsiya uchun yozing. Misol: /kurs 100 USD UZS');
 
-        if (text.startsWith('/kurs ')) {
+        if (isFeatureBot && text.startsWith('/kurs ')) {
             const parts = text.split(/\s+/);
             const amount = Number(parts[1]);
             const base = (parts[2] || 'USD').toUpperCase();
@@ -325,9 +330,9 @@ function setupSubBotHandlers(botInstance, botData) {
             }
         }
 
-        if (text === '🧰 Xizmatlar') return ctx.reply('🧰 Xizmatlar:\n🌦 /ob-havo Toshkent\n💱 /kurs 100 USD UZS\n🧠 /quiz');
+        if (isFeatureBot && text === '🧰 Xizmatlar') return ctx.reply('🧰 Xizmatlar:\n🌦 /ob-havo Toshkent\n💱 /kurs 100 USD UZS\n🧠 /quiz');
 
-        if (text === '🧠 Quiz' || text === '/quiz') {
+        if (isFeatureBot && (text === '🧠 Quiz' || text === '/quiz')) {
             try {
                 const quiz = await freeServices.getQuiz();
                 if (!quiz) return ctx.reply('⚠️ Hozircha quiz topilmadi.');

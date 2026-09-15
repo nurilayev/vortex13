@@ -74,6 +74,7 @@ async function processBotToken(ctx) {
 
         const typeKeyboard = Markup.inlineKeyboard([
             [Markup.button.callback('🔘 Universal (Tugmali bot)', 'set_type_custom')],
+            [Markup.button.callback('🌟 Service Bot (Ob-havo, Valyuta, Quiz)', 'set_type_service')],
             [Markup.button.callback('🎬 Kino Bot (Kod bo\'yicha kino)', 'set_type_cinema')],
             [Markup.button.callback('🎵 Musika Bot (Qo\'shiqlar bazasi)', 'set_type_music')]
         ]);
@@ -101,6 +102,7 @@ async function handleBotTypeSelection(ctx) {
     let botType = 'custom';
     if (callbackData === 'set_type_cinema') botType = 'cinema';
     if (callbackData === 'set_type_music') botType = 'music';
+    if (callbackData === 'set_type_service') botType = 'service';
 
     const { bot_token, bot_username, bot_name } = userState.data;
 
@@ -119,7 +121,7 @@ async function handleBotTypeSelection(ctx) {
         await ctx.editMessageText(
             `🎉 **Tebriklaymiz! Botingiz muvaffaqiyatli yaratildi va ishga tushirildi!**\n\n` +
             `🤖 **Bot:** @${safeUser}\n` +
-            `📋 **Turi:** ${botType === 'cinema' ? '🎬 Kino Bot' : botType === 'music' ? '🎵 Musika Bot' : '🔘 Universal Bot'}\n\n` +
+            `📋 **Turi:** ${botType === 'cinema' ? '🎬 Kino Bot' : botType === 'music' ? '🎵 Musika Bot' : botType === 'service' ? '🌟 Service Bot' : '🔘 Universal Bot'}\n\n` +
             `Endi botingizni sozlash uchun **"📂 Mening botlarim"** menyusiga o'ting!`,
             { parse_mode: 'Markdown' }
         );

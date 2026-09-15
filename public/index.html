@@ -290,6 +290,7 @@
             <option value="custom">
               🔘 Universal Bot — Tugmali va Menyuli
             </option>
+            <option value="service">🌟 Service Bot — Ob-havo, Valyuta, Quiz</option>
             <option value="cinema">
               🎬 Kino Bot — Kod bo'yicha va Global Kino
             </option>
@@ -561,6 +562,7 @@
           class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-slate-100"
         >
           <option value="custom">🔘 Universal</option>
+          <option value="service">🌟 Service Bot</option>
           <option value="cinema">🎬 Kino</option>
           <option value="music">🎵 Musika</option>
         </select>
@@ -755,6 +757,8 @@
                 ? "🎬 Kino Bot"
                 : bot.bot_type === "music"
                   ? "🎵 Musika Bot"
+                  : bot.bot_type === "service"
+                    ? "🌟 Service Bot"
                   : "🔘 Universal Bot";
             return `<div class="shisha-karta p-4 rounded-2xl space-y-3">
                     <div class="flex items-center justify-between gap-3">

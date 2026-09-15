@@ -255,7 +255,7 @@ async function updateBotSettings(botId, ownerId, settings = {}) {
     if (!bot) return null;
 
     if (typeof settings.welcome_text === 'string') bot.welcome_text = settings.welcome_text.trim() || null;
-    if (settings.bot_type && ['custom', 'cinema', 'music'].includes(settings.bot_type)) bot.bot_type = settings.bot_type;
+    if (settings.bot_type && ['custom', 'service', 'cinema', 'music'].includes(settings.bot_type)) bot.bot_type = settings.bot_type;
     if (settings.theme && typeof settings.theme === 'object') bot.theme = { ...bot.theme, ...settings.theme };
     await saveDb();
     return bot;

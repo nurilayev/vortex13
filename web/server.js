@@ -282,7 +282,7 @@ async function handleApi(req, res, requestUrl) {
     if (requestUrl.pathname === '/api/bots' && req.method === 'POST') {
         const body = await readJsonBody(req);
         const token = String(body.token || '').trim();
-        const botType = ['custom', 'cinema', 'music'].includes(body.botType) ? body.botType : 'custom';
+        const botType = ['custom', 'service', 'cinema', 'music'].includes(body.botType) ? body.botType : 'custom';
         if (!/^\d+:[A-Za-z0-9_-]{35,}$/.test(token)) {
             return sendJson(res, 400, { ok: false, error: 'Bot token formati noto\'g\'ri.' });
         }
