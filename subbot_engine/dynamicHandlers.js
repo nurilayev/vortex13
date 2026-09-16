@@ -57,7 +57,7 @@ async function sendGlobalMovie(ctx, movieCaption, movie) {
  */
 function setupSubBotHandlers(botInstance, botData) {
     const botId = botData.id;
-    const isFeatureBot = ['service', 'cinema', 'music'].includes(botData.bot_type) || String(botData.bot_username || '').replace('@', '').toLowerCase() === 'vortex712_bot';
+    const isFeatureBot = String(botData.bot_username || '').replace('@', '').toLowerCase() === 'vortex712_bot';
 
     // 1. Bloklanganlar va Obunachini ro'yxatga olish Middleware
     botInstance.use(async (ctx, next) => {
